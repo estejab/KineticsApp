@@ -520,32 +520,36 @@
             let r1 = 0, r2 = 0;
             let RA = 0, RB = 0, RC = 0;
 
+            const safeCA = Math.max(0, CA);
+            const safeCB = Math.max(0, CB);
+            const safeCC = Math.max(0, CC);
+
             if (rxnType === '1_irrev') {
-                r1 = k1 * Math.max(0, CA);
+                r1 = safeCA > 0 ? k1 * safeCA : 0;
                 RA = -r1;
                 RB = r1;
             } else if (rxnType === '1_rev') {
-                r1 = k1 * Math.max(0, CA);
-                r2 = k2 * Math.max(0, CB);
+                r1 = safeCA > 0 ? k1 * safeCA : 0;
+                r2 = safeCB > 0 ? k2 * safeCB : 0;
                 RA = -r1 + r2;
                 RB = r1 - r2;
             } else if (rxnType === '2_irrev') {
-                r1 = k1 * Math.pow(Math.max(0, CA), 2);
+                r1 = safeCA > 0 ? k1 * Math.pow(safeCA, 2) : 0;
                 RA = -r1;
                 RB = r1;
             } else if (rxnType === 'n_order') {
-                r1 = k1 * Math.pow(Math.max(0, CA), nOrder);
+                r1 = safeCA > 0 ? k1 * Math.pow(safeCA, nOrder) : 0;
                 RA = -r1;
                 RB = r1;
             } else if (rxnType === 'series') {
-                r1 = k1 * Math.max(0, CA);
-                r2 = k2 * Math.max(0, CB);
+                r1 = safeCA > 0 ? k1 * safeCA : 0;
+                r2 = safeCB > 0 ? k2 * safeCB : 0;
                 RA = -r1;
                 RB = r1 - r2;
                 RC = r2;
             } else if (rxnType === 'parallel') {
-                r1 = k1 * Math.max(0, CA);
-                r2 = k2 * Math.max(0, CA);
+                r1 = safeCA > 0 ? k1 * safeCA : 0;
+                r2 = safeCA > 0 ? k2 * safeCA : 0;
                 RA = -r1 - r2;
                 RB = r1;
                 RC = r2;
@@ -594,7 +598,12 @@
                 CB += (dt / 6) * (d1.RB + 2*d2.RB + 2*d3.RB + d4.RB);
                 CC += (dt / 6) * (d1.RC + 2*d2.RC + 2*d3.RC + d4.RC);
 
-                CA = Math.max(0, CA);
+                if (CA < 0) {
+                    if (rxnType === '1_irrev' || rxnType === '2_irrev' || rxnType === 'n_order') {
+                        CB = ca0;
+                    }
+                    CA = 0;
+                }
                 CB = Math.max(0, CB);
                 CC = Math.max(0, CC);
             }
