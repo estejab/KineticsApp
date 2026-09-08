@@ -1,13 +1,344 @@
-<!-- ... existing code ... -->
-                        <!-- Reaction 2 Arrhenius Parameters (A2, Ea2) - Visible for Reversible, Series, Parallel -->
-                        <div id="rxn2Section" class="hidden p-3 bg-teal-50 border border-teal-200 rounded-lg space-y-3">
-                            <div class="font-bold text-teal-900 text-xs uppercase tracking-wide flex justify-between items-center">
-                                <span id="rxn2Label">Secondary Step Kinetics ($k_2$)</span>
-                                <span id="k2Display" class="font-mono font-bold text-teal-700 text-xs">k₂ = 0.0120</span>
-                            </div>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tennessee Tech - Batch Reactor Kinetics Simulator</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- MathJax for chemical kinetics formatting -->
+    <script>
+        MathJax = {
+            tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] },
+            svg: { fontCache: 'global' }
+        };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js" id="MathJax-script" async></script>
 
-                            <!-- Activation Energy Ea2 -->
-<!-- ... existing code ... -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        ttu: {
+                            purple: '#4F2984',
+                            purpleDark: '#3A1E63',
+                            purpleLight: '#6837A8',
+                            gold: '#FFC72C',
+                            goldDark: '#E0A812',
+                            goldLight: '#FFE185',
+                            darkGray: '#1F2937',
+                            lightBg: '#F8FAFC'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #4F2984;
+            border-radius: 3px;
+        }
+        .bg-ttu-gradient {
+            background: linear-gradient(135deg, #3A1E63 0%, #4F2984 60%, #6837A8 100%);
+        }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800 font-sans min-h-screen flex flex-col">
+
+    <!-- Header / Branding Bar -->
+    <header class="bg-ttu-gradient text-white shadow-md border-b-4 border-ttu-gold px-4 py-3">
+        <div class="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-2">
+            <div class="flex items-center space-x-3">
+                <div class="bg-ttu-gold text-ttu-purple font-black text-xl rounded-lg w-10 h-10 flex items-center justify-center shadow-inner">
+                    TTU
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg leading-tight tracking-wide">Batch Reactor Kinetics Simulator</h1>
+                    <p class="text-xs text-ttu-goldLight opacity-90">Department of Chemical & Biomolecular Engineering • Isothermal Liquid Phase</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-2 text-xs bg-ttu-purpleDark/60 px-3 py-1.5 rounded-full border border-ttu-gold/40">
+                <i class="fa-solid fa-atom text-ttu-gold animate-spin" style="animation-duration: 8s;"></i>
+                <span id="headerReactionTitle">Reaction Scheme: <strong>A &rarr; B</strong></span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-5 grid grid-cols-1 lg:grid-cols-12 gap-5">
+        
+        <!-- Left Panel: Controls & Reaction Parameters (5 cols) -->
+        <section class="lg:col-span-5 bg-white rounded-xl shadow-md border border-slate-200 flex flex-col overflow-hidden">
+            <div class="bg-slate-50 border-b border-slate-200 px-4 py-3 flex items-center justify-between">
+                <h2 class="font-bold text-ttu-purple flex items-center gap-2">
+                    <i class="fa-solid fa-sliders"></i> Reaction Mechanism & Parameters
+                </h2>
+                <span id="orderBadge" class="bg-ttu-purple text-ttu-gold text-xs font-semibold px-2.5 py-0.5 rounded-full border border-ttu-gold">
+                    1st Order Irreversible
+                </span>
+            </div>
+
+            <div class="p-4 flex-1 overflow-y-auto space-y-4 text-sm">
+                
+                <!-- Reaction System Selector -->
+                <div>
+                    <label for="rxnTypeSelect" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                        Select Reaction Scheme
+                    </label>
+                    <select id="rxnTypeSelect" onchange="onReactionTypeChange()" class="w-full bg-slate-50 border border-slate-300 font-semibold text-ttu-purple rounded-lg p-2 focus:ring-2 focus:ring-ttu-purple focus:outline-none">
+                        <option value="1_irrev">1. First-Order Irreversible (A → B)</option>
+                        <option value="1_rev">2. First-Order Reversible (A ⇌ B)</option>
+                        <option value="2_irrev">3. Second-Order Irreversible (A → B)</option>
+                        <option value="n_order">4. n-th Order Irreversible (A → B)</option>
+                        <option value="series">5. Two First-Order in Series (A → B → C)</option>
+                        <option value="parallel">6. Two First-Order in Parallel (A → B, A → C)</option>
+                    </select>
+                </div>
+
+                <!-- Rate Law Equation Box (Rawlings & Ekerdt Notation) -->
+                <div class="bg-purple-50 p-3 rounded-lg border border-purple-200 text-xs">
+                    <div class="text-ttu-purple font-bold mb-1 flex items-center justify-between">
+                        <span>Rate Expressions (Rawlings & Ekerdt)</span>
+                        <span class="text-[10px] text-slate-500 font-normal">$R_i = \sum \nu_{ij} r_j$</span>
+                    </div>
+                    <div id="formulaBox" class="font-mono text-slate-800 text-center py-1 bg-white rounded border border-purple-100 shadow-inner">
+                        $$r_1 = k_1 C_A, \quad R_A = -r_1, \quad R_B = r_1$$
+                    </div>
+                </div>
+
+                <!-- n-th Order Control (Visible only when n-th order selected) -->
+                <div id="nOrderContainer" class="hidden p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                    <div class="flex justify-between items-center mb-1">
+                        <label for="nOrderInput" class="font-semibold text-amber-900 text-xs">
+                            Reaction Order ($n$)
+                        </label>
+                        <span class="font-mono font-bold text-amber-800 text-xs bg-amber-100 px-2 py-0.5 rounded">
+                            n = <span id="nOrderValue">1.50</span>
+                        </span>
+                    </div>
+                    <input type="range" id="nOrderInput" min="0.0" max="4.0" value="1.5" step="0.1" 
+                           class="w-full h-2 bg-amber-200 rounded-lg appearance-none cursor-pointer accent-amber-600"
+                           oninput="updateParams()">
+                </div>
+
+                <!-- Temperature (T) Slider -->
+                <div>
+                    <div class="flex justify-between items-center mb-1">
+                        <label for="tempInput" class="font-semibold text-slate-700 flex items-center gap-1.5 text-xs">
+                            <i class="fa-solid fa-temperature-high text-red-500"></i> Reactor Temperature ($T$)
+                        </label>
+                        <span class="font-mono font-bold text-ttu-purple bg-purple-50 px-2 py-0.5 rounded border border-purple-200 text-xs">
+                            <span id="tempValue">320</span> K (<span id="tempCValue">46.85</span> °C)
+                        </span>
+                    </div>
+                    <input type="range" id="tempInput" min="273" max="450" value="320" step="1" 
+                           class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-ttu-purple"
+                           oninput="updateParams()">
+                    <div class="flex justify-between text-[10px] text-slate-400 mt-0.5">
+                        <span>273 K (0°C)</span>
+                        <span>360 K</span>
+                        <span>450 K (177°C)</span>
+                    </div>
+                </div>
+
+                <!-- Primary Reaction Kinetic Parameters (Step 1: k1) -->
+                <div class="p-3 bg-slate-50 border border-slate-200 rounded-lg space-y-3">
+                    <div class="font-bold text-ttu-purple text-xs uppercase tracking-wide flex justify-between items-center">
+                        <span id="rxn1Label">Primary Step Kinetics ($k_1$)</span>
+                        <span id="k1Display" class="font-mono font-bold text-ttu-purple text-xs">k₁ = 0.0450</span>
+                    </div>
+
+                    <!-- Activation Energy Ea1 -->
+                    <div>
+                        <div class="flex justify-between items-center mb-1 text-xs">
+                            <label for="ea1Input" class="text-slate-600">Activation Energy ($E_{a1}$)</label>
+                            <span class="font-mono text-slate-700"><span id="ea1Value">45.0</span> kJ/mol</span>
+                        </div>
+                        <input type="range" id="ea1Input" min="10" max="90" value="45" step="0.5" 
+                               class="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-ttu-purple"
+                               oninput="updateParams()">
+                    </div>
+
+                    <!-- Pre-exponential Factor A1 -->
+                    <div>
+                        <div class="flex justify-between items-center mb-1 text-xs">
+                            <label for="freq1Input" class="text-slate-600">Frequency Factor ($A_{01}$)</label>
+                            <span class="font-mono text-slate-700">10^<span id="freq1Value">6.0</span> <span id="unit1">s⁻¹</span></span>
+                        </div>
+                        <input type="range" id="freq1Input" min="2" max="10" value="6" step="0.1" 
+                               class="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-ttu-purple"
+                               oninput="updateParams()">
+                    </div>
+                </div>
+
+                <!-- Secondary Reaction Kinetic Parameters (Step 2 or Reverse: k2 / k-1) -->
+                <div id="rxn2Section" class="hidden p-3 bg-teal-50 border border-teal-200 rounded-lg space-y-3">
+                    <div class="font-bold text-teal-900 text-xs uppercase tracking-wide flex justify-between items-center">
+                        <span id="rxn2Label">Secondary Step Kinetics ($k_2$)</span>
+                        <span id="k2Display" class="font-mono font-bold text-teal-700 text-xs">k₂ = 0.0120</span>
+                    </div>
+
+                    <!-- Activation Energy Ea2 -->
+                    <div>
+                        <div class="flex justify-between items-center mb-1 text-xs">
+                            <label for="ea2Input" class="text-teal-800">Activation Energy ($E_{a2}$)</label>
+                            <span class="font-mono text-teal-900"><span id="ea2Value">55.0</span> kJ/mol</span>
+                        </div>
+                        <input type="range" id="ea2Input" min="10" max="90" value="55" step="0.5" 
+                               class="w-full h-1.5 bg-teal-200 rounded-lg appearance-none cursor-pointer accent-teal-600"
+                               oninput="updateParams()">
+                    </div>
+
+                    <!-- Pre-exponential Factor A2 -->
+                    <div>
+                        <div class="flex justify-between items-center mb-1 text-xs">
+                            <label for="freq2Input" class="text-teal-800">Frequency Factor ($A_{02}$)</label>
+                            <span class="font-mono text-teal-900">10^<span id="freq2Value">6.0</span> <span id="unit2">s⁻¹</span></span>
+                        </div>
+                        <input type="range" id="freq2Input" min="2" max="10" value="6" step="0.1" 
+                               class="w-full h-1.5 bg-teal-200 rounded-lg appearance-none cursor-pointer accent-teal-600"
+                               oninput="updateParams()">
+                    </div>
+                </div>
+
+                <!-- Initial Concentration (CA0) Slider -->
+                <div>
+                    <div class="flex justify-between items-center mb-1">
+                        <label for="ca0Input" class="font-semibold text-slate-700 flex items-center gap-1.5 text-xs">
+                            <i class="fa-solid fa-vial text-emerald-600"></i> Initial Concentration ($C_{A0}$)
+                        </label>
+                        <span class="font-mono font-bold text-ttu-purple bg-purple-50 px-2 py-0.5 rounded border border-purple-200 text-xs">
+                            <span id="ca0Value">2.00</span> mol/L
+                        </span>
+                    </div>
+                    <input type="range" id="ca0Input" min="0.2" max="5.0" value="2.0" step="0.1" 
+                           class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-ttu-purple"
+                           oninput="updateParams()">
+                </div>
+
+                <!-- Total Simulation Time -->
+                <div>
+                    <div class="flex justify-between items-center mb-1">
+                        <label for="timeMaxInput" class="font-semibold text-slate-700 flex items-center gap-1.5 text-xs">
+                            <i class="fa-solid fa-stopwatch text-indigo-500"></i> Batch Duration ($t_{final}$)
+                        </label>
+                        <span class="font-mono font-bold text-ttu-purple bg-purple-50 px-2 py-0.5 rounded border border-purple-200 text-xs">
+                            <span id="timeMaxValue">60</span> s
+                        </span>
+                    </div>
+                    <input type="range" id="timeMaxInput" min="10" max="300" value="60" step="5" 
+                           class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-ttu-purple"
+                           oninput="updateParams()">
+                </div>
+
+            </div>
+
+            <!-- Simulation Controls Footer -->
+            <div class="p-3 bg-slate-50 border-t border-slate-200 grid grid-cols-3 gap-2">
+                <button id="btnPlay" onclick="togglePlay()" class="py-2.5 px-3 bg-ttu-gold hover:bg-ttu-goldDark text-ttu-purple font-bold rounded-lg shadow-sm transition flex items-center justify-center gap-2">
+                    <i id="playIcon" class="fa-solid fa-play"></i>
+                    <span id="playText">Run</span>
+                </button>
+                <button onclick="resetSim()" class="py-2.5 px-3 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded-lg transition flex items-center justify-center gap-1.5">
+                    <i class="fa-solid fa-rotate-left"></i> Reset
+                </button>
+                <button onclick="stepForward()" class="py-2.5 px-3 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded-lg transition flex items-center justify-center gap-1.5">
+                    <i class="fa-solid fa-forward-step"></i> Step
+                </button>
+            </div>
+        </section>
+
+        <!-- Right Panel: Graphic Animation & Plot (7 cols) -->
+        <section class="lg:col-span-7 flex flex-col gap-5">
+            
+            <!-- Top Grid: Reactor Graphic + Numerical KPI Stats -->
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-5">
+                
+                <!-- Batch Reactor Canvas Graphic Container (7 cols) -->
+                <div class="md:col-span-7 bg-white p-4 rounded-xl shadow-md border border-slate-200 flex flex-col items-center relative overflow-hidden">
+                    <div class="w-full flex justify-between items-center mb-2">
+                        <h3 class="font-bold text-ttu-purple text-sm flex items-center gap-2">
+                            <i class="fa-solid fa-flask-vial"></i> Liquid Reactor Graphic
+                        </h3>
+                        <span class="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded border border-slate-200 font-mono">
+                            V = Const (Liquid Phase)
+                        </span>
+                    </div>
+
+                    <!-- Canvas for Animated Reactor -->
+                    <div class="relative w-full h-[210px] flex items-center justify-center">
+                        <canvas id="reactorCanvas" width="320" height="200" class="max-w-full h-auto"></canvas>
+                    </div>
+
+                    <!-- Visual Legend -->
+                    <div class="w-full flex flex-wrap justify-center items-center gap-4 mt-2 text-xs">
+                        <div class="flex items-center gap-1.5">
+                            <span class="w-3 h-3 rounded-full bg-ttu-purple inline-block"></span>
+                            <span class="text-slate-600 font-medium">Species A</span>
+                        </div>
+                        <div class="flex items-center gap-1.5">
+                            <span class="w-3 h-3 rounded-full bg-ttu-gold inline-block"></span>
+                            <span class="text-slate-600 font-medium">Species B</span>
+                        </div>
+                        <div id="legendSpeciesC" class="hidden flex items-center gap-1.5">
+                            <span class="w-3 h-3 rounded-full bg-teal-500 inline-block"></span>
+                            <span class="text-slate-600 font-medium">Species C</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Digital Gauge KPIs (5 cols) -->
+                <div class="md:col-span-5 bg-white p-4 rounded-xl shadow-md border border-slate-200 flex flex-col justify-between space-y-3">
+                    <h3 class="font-bold text-ttu-purple text-sm flex items-center gap-2 border-b border-slate-100 pb-2">
+                        <i class="fa-solid fa-gauge-high"></i> Live Monitor
+                    </h3>
+
+                    <div class="space-y-2 flex-1 justify-center flex flex-col text-xs">
+                        <!-- Time -->
+                        <div class="flex justify-between items-center bg-slate-50 p-2 rounded-lg border border-slate-100">
+                            <span class="text-slate-500 font-medium">Time ($t$)</span>
+                            <span class="font-mono font-bold text-slate-800 text-sm">
+                                <span id="kpiTime">0.0</span> / <span id="kpiMaxTime">60</span> s
+                            </span>
+                        </div>
+
+                        <!-- Concentration CA -->
+                        <div class="flex justify-between items-center bg-purple-50 p-2 rounded-lg border border-purple-100">
+                            <span class="text-ttu-purple font-semibold">[$A$] Concentration ($C_A$)</span>
+                            <span class="font-mono font-bold text-ttu-purple text-sm">
+                                <span id="kpiCA">2.000</span> mol/L
+                            </span>
+                        </div>
+
+                        <!-- Concentration CB -->
+                        <div class="flex justify-between items-center bg-amber-50 p-2 rounded-lg border border-amber-100">
+                            <span class="text-amber-800 font-semibold">[$B$] Concentration ($C_B$)</span>
+                            <span class="font-mono font-bold text-amber-700 text-sm">
+                                <span id="kpiCB">0.000</span> mol/L
+                            </span>
+                        </div>
+
+                        <!-- Concentration CC (Visible for Series/Parallel) -->
+                        <div id="kpiRowCC" class="hidden flex justify-between items-center bg-teal-50 p-2 rounded-lg border border-teal-100">
+                            <span class="text-teal-800 font-semibold">[$C$] Concentration ($C_C$)</span>
+                            <span class="font-mono font-bold text-teal-700 text-sm">
+                                <span id="kpiCC">0.000</span> mol/L
+                            </span>
+                        </div>
+
                         <!-- Conversion X_A -->
                         <div class="flex justify-between items-center bg-emerald-50 p-2 rounded-lg border border-emerald-100">
                             <span class="text-emerald-800 font-semibold">Conversion ($X_A$)</span>
@@ -40,7 +371,101 @@
                 </div>
 
                 <!-- Plot Area -->
-<!-- ... existing code ... -->
+                <div class="relative flex-1 min-h-[250px] w-full">
+                    <canvas id="kineticsChart"></canvas>
+                </div>
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-slate-800 text-slate-400 text-xs py-2 px-4 text-center border-t border-slate-700">
+        Tennessee Tech University • Department of Chemical & Biomolecular Engineering • Gas Constant $R = 8.314 \text{ J/(mol}\cdot\text{K)}$
+    </footer>
+
+    <!-- Logic Script -->
+    <script>
+        // Universal Constants
+        const R = 8.314; // Universal gas constant J/(mol K)
+
+        // State Variables
+        let rxnType = '1_irrev';
+        let tempK = 320;
+        let ea1Kj = 45.0, freq1Exp = 6.0;
+        let ea2Kj = 55.0, freq2Exp = 6.0;
+        let nOrder = 1.5;
+        let ca0 = 2.0;
+        let tMax = 60;
+
+        let currentTime = 0;
+        let isRunning = false;
+        let timerId = null;
+
+        // Visual animation parameters
+        let stirrerAngle = 0;
+        let particles = [];
+        const NUM_PARTICLES = 40;
+
+        // Canvas & Chart
+        let kineticsChart = null;
+        let reactorCanvas = null;
+        let ctx = null;
+
+        window.addEventListener('DOMContentLoaded', () => {
+            reactorCanvas = document.getElementById('reactorCanvas');
+            ctx = reactorCanvas.getContext('2d');
+
+            initParticles();
+            initChart();
+            onReactionTypeChange();
+
+            requestAnimationFrame(animationLoop);
+        });
+
+        // Initialize particles for canvas animation
+        function initParticles() {
+            particles = [];
+            for (let i = 0; i < NUM_PARTICLES; i++) {
+                particles.push({
+                    x: Math.random() * 140 - 70,
+                    y: Math.random() * 100 - 50,
+                    vx: (Math.random() - 0.5) * 1.2,
+                    vy: (Math.random() - 0.5) * 1.2,
+                    radius: Math.random() * 2.5 + 2.5
+                });
+            }
+        }
+
+        // Arrhenius calculation
+        function calcK1() {
+            const A1 = Math.pow(10, freq1Exp);
+            return A1 * Math.exp(-(ea1Kj * 1000) / (R * tempK));
+        }
+
+        function calcK2() {
+            const A2 = Math.pow(10, freq2Exp);
+            return A2 * Math.exp(-(ea2Kj * 1000) / (R * tempK));
+        }
+
+        // UI Event for Reaction Scheme Change
+        function onReactionTypeChange() {
+            rxnType = document.getElementById('rxnTypeSelect').value;
+            const rxn2Section = document.getElementById('rxn2Section');
+            const nOrderContainer = document.getElementById('nOrderContainer');
+            const kpiRowCC = document.getElementById('kpiRowCC');
+            const legendSpeciesC = document.getElementById('legendSpeciesC');
+            const headerTitle = document.getElementById('headerReactionTitle');
+            const formulaBox = document.getElementById('formulaBox');
+            const orderBadge = document.getElementById('orderBadge');
+
+            // Reset visibilities
+            rxn2Section.classList.add('hidden');
+            nOrderContainer.classList.add('hidden');
+            kpiRowCC.classList.add('hidden');
+            legendSpeciesC.classList.add('hidden');
+
             if (rxnType === '1_irrev') {
                 orderBadge.textContent = "1st Order Irreversible";
                 headerTitle.innerHTML = "Reaction Scheme: <strong>A &rarr; B (1st Order)</strong>";
@@ -82,23 +507,189 @@
             }
 
             // Re-render MathJax expressions in formula Box
-<!-- ... existing code ... -->
+            if (window.MathJax && MathJax.typesetPromise) {
+                MathJax.typesetPromise([formulaBox]);
+            }
+
+            updateParams();
+        }
+
+        // Numerical ODE Derivatives based on Rawlings & Ekerdt Notation:
+        // r_j = step reaction rates, R_i = species production rates = dCi/dt
+        function computeDerivatives(CA, CB, CC, k1, k2) {
+            let r1 = 0, r2 = 0;
+            let RA = 0, RB = 0, RC = 0;
+
+            if (rxnType === '1_irrev') {
+                r1 = k1 * Math.max(0, CA);
+                RA = -r1;
+                RB = r1;
+            } else if (rxnType === '1_rev') {
+                r1 = k1 * Math.max(0, CA);
+                r2 = k2 * Math.max(0, CB);
+                RA = -r1 + r2;
+                RB = r1 - r2;
+            } else if (rxnType === '2_irrev') {
+                r1 = k1 * Math.pow(Math.max(0, CA), 2);
+                RA = -r1;
+                RB = r1;
+            } else if (rxnType === 'n_order') {
+                r1 = k1 * Math.pow(Math.max(0, CA), nOrder);
+                RA = -r1;
+                RB = r1;
+            } else if (rxnType === 'series') {
+                r1 = k1 * Math.max(0, CA);
+                r2 = k2 * Math.max(0, CB);
+                RA = -r1;
+                RB = r1 - r2;
+                RC = r2;
+            } else if (rxnType === 'parallel') {
+                r1 = k1 * Math.max(0, CA);
+                r2 = k2 * Math.max(0, CA);
+                RA = -r1 - r2;
+                RB = r1;
+                RC = r2;
+            }
+
+            return { RA, RB, RC, r1, r2 };
+        }
+
+        // Runge-Kutta 4th Order Integrator for general kinetics equations
+        function solveConcentrations(targetTime, k1, k2) {
+            const steps = 300;
+            const dt = targetTime / steps;
+            let CA = ca0, CB = 0, CC = 0;
+
+            if (targetTime <= 0) return { CA, CB, CC };
+
+            for (let i = 0; i < steps; i++) {
+                // k1_step
+                let d1 = computeDerivatives(CA, CB, CC, k1, k2);
+                
+                // k2_step
+                let d2 = computeDerivatives(
+                    CA + 0.5 * dt * d1.RA,
+                    CB + 0.5 * dt * d1.RB,
+                    CC + 0.5 * dt * d1.RC,
+                    k1, k2
+                );
+
+                // k3_step
+                let d3 = computeDerivatives(
+                    CA + 0.5 * dt * d2.RA,
+                    CB + 0.5 * dt * d2.RB,
+                    CC + 0.5 * dt * d2.RC,
+                    k1, k2
+                );
+
+                // k4_step
+                let d4 = computeDerivatives(
+                    CA + dt * d3.RA,
+                    CB + dt * d3.RB,
+                    CC + dt * d3.RC,
+                    k1, k2
+                );
+
+                CA += (dt / 6) * (d1.RA + 2*d2.RA + 2*d3.RA + d4.RA);
+                CB += (dt / 6) * (d1.RB + 2*d2.RB + 2*d3.RB + d4.RB);
+                CC += (dt / 6) * (d1.RC + 2*d2.RC + 2*d3.RC + d4.RC);
+
+                CA = Math.max(0, CA);
+                CB = Math.max(0, CB);
+                CC = Math.max(0, CC);
+            }
+
             return { CA, CB, CC };
         }
 
         // Calculate Production Rate RA = dCA/dt
         function calculateProductionRateA(CA, CB, k1, k2) {
-            if (rxnType === '1_irrev') return -k1 * CA;
-            if (rxnType === '1_rev') return -k1 * CA + k2 * CB;
-            if (rxnType === '2_irrev') return -k1 * CA * CA;
-            if (rxnType === 'n_order') return -k1 * Math.pow(Math.max(0, CA), nOrder);
-            if (rxnType === 'series') return -k1 * CA;
-            if (rxnType === 'parallel') return -(k1 + k2) * CA;
-            return 0;
+            return computeDerivatives(CA, CB, 0, k1, k2).RA;
         }
 
         // Update Slider Values & Recalculate State
-<!-- ... existing code ... -->
+        function updateParams() {
+            tempK = parseFloat(document.getElementById('tempInput').value);
+            ea1Kj = parseFloat(document.getElementById('ea1Input').value);
+            freq1Exp = parseFloat(document.getElementById('freq1Input').value);
+            ea2Kj = parseFloat(document.getElementById('ea2Input').value);
+            freq2Exp = parseFloat(document.getElementById('freq2Input').value);
+            nOrder = parseFloat(document.getElementById('nOrderInput').value);
+            ca0 = parseFloat(document.getElementById('ca0Input').value);
+            tMax = parseFloat(document.getElementById('timeMaxInput').value);
+
+            // Update Labels
+            document.getElementById('tempValue').textContent = tempK;
+            document.getElementById('tempCValue').textContent = (tempK - 273.15).toFixed(2);
+            document.getElementById('ea1Value').textContent = ea1Kj.toFixed(1);
+            document.getElementById('freq1Value').textContent = freq1Exp.toFixed(1);
+            document.getElementById('ea2Value').textContent = ea2Kj.toFixed(1);
+            document.getElementById('freq2Value').textContent = freq2Exp.toFixed(1);
+            document.getElementById('nOrderValue').textContent = nOrder.toFixed(2);
+            document.getElementById('ca0Value').textContent = ca0.toFixed(2);
+            document.getElementById('timeMaxValue').textContent = tMax;
+            document.getElementById('kpiMaxTime').textContent = tMax;
+
+            const unit1 = (rxnType === '2_irrev') ? 'L/(mol·s)' : (rxnType === 'n_order' ? `(mol/L)¹⁻ⁿ/s` : 's⁻¹');
+            document.getElementById('unit1').textContent = unit1;
+
+            const k1 = calcK1();
+            const k2 = calcK2();
+
+            document.getElementById('k1Display').textContent = `k₁ = ${k1 < 0.001 ? k1.toExponential(3) : k1.toFixed(4)}`;
+            document.getElementById('k2Display').textContent = `k₂ = ${k2 < 0.001 ? k2.toExponential(3) : k2.toFixed(4)}`;
+
+            if (currentTime > tMax) currentTime = tMax;
+
+            updateChartData();
+            updateKPIs();
+        }
+
+        // Play / Pause Controls
+        function togglePlay() {
+            isRunning = !isRunning;
+            const playText = document.getElementById('playText');
+            const playIcon = document.getElementById('playIcon');
+            const btn = document.getElementById('btnPlay');
+
+            if (isRunning) {
+                playText.textContent = "Pause";
+                playIcon.className = "fa-solid fa-pause";
+                btn.className = "py-2.5 px-3 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-lg shadow-sm transition flex items-center justify-center gap-2";
+                
+                if (currentTime >= tMax) currentTime = 0;
+                timerId = setInterval(simStep, 100);
+            } else {
+                playText.textContent = "Run";
+                playIcon.className = "fa-solid fa-play";
+                btn.className = "py-2.5 px-3 bg-ttu-gold hover:bg-ttu-goldDark text-ttu-purple font-bold rounded-lg shadow-sm transition flex items-center justify-center gap-2";
+                clearInterval(timerId);
+            }
+        }
+
+        function resetSim() {
+            if (isRunning) togglePlay();
+            currentTime = 0;
+            updateParams();
+        }
+
+        function stepForward() {
+            if (isRunning) togglePlay();
+            const step = tMax / 40;
+            currentTime = Math.min(tMax, currentTime + step);
+            updateParams();
+        }
+
+        function simStep() {
+            const dt = tMax / 150;
+            currentTime += dt;
+            if (currentTime >= tMax) {
+                currentTime = tMax;
+                togglePlay();
+            }
+            updateParams();
+        }
+
         // Update Digital Gauges
         function updateKPIs() {
             const k1 = calcK1();
@@ -117,4 +708,271 @@
         }
 
         // Chart.js Setup and Data Updates
-<!-- ... existing code ... -->
+        function initChart() {
+            const ctxChart = document.getElementById('kineticsChart').getContext('2d');
+            
+            kineticsChart = new Chart(ctxChart, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [
+                        {
+                            label: 'CA (Reactant A)',
+                            data: [],
+                            borderColor: '#4F2984', // TTU Purple
+                            backgroundColor: 'rgba(79, 41, 132, 0.08)',
+                            borderWidth: 3,
+                            fill: true,
+                            pointRadius: 0,
+                            tension: 0.2
+                        },
+                        {
+                            label: 'CB (Product B)',
+                            data: [],
+                            borderColor: '#FFC72C', // TTU Gold
+                            backgroundColor: 'rgba(255, 199, 44, 0.12)',
+                            borderWidth: 3,
+                            fill: true,
+                            pointRadius: 0,
+                            tension: 0.2
+                        },
+                        {
+                            label: 'CC (Product C)',
+                            data: [],
+                            borderColor: '#14B8A6', // Teal
+                            backgroundColor: 'rgba(20, 184, 166, 0.1)',
+                            borderWidth: 3,
+                            fill: true,
+                            pointRadius: 0,
+                            tension: 0.2,
+                            hidden: true
+                        },
+                        {
+                            label: 'Current Time Marker',
+                            data: [],
+                            borderColor: '#EF4444',
+                            borderDash: [4, 4],
+                            borderWidth: 2,
+                            pointRadius: 5,
+                            pointBackgroundColor: '#EF4444',
+                            fill: false
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: false,
+                    interaction: { mode: 'index', intersect: false },
+                    scales: {
+                        x: {
+                            title: { display: true, text: 'Time t (s)', font: { weight: 'bold', size: 11 } },
+                            grid: { color: '#F1F5F9' }
+                        },
+                        y: {
+                            title: { display: true, text: 'Concentration (mol/L)', font: { weight: 'bold', size: 11 } },
+                            beginAtZero: true,
+                            suggestedMax: ca0 * 1.05,
+                            grid: { color: '#F1F5F9' }
+                        }
+                    },
+                    plugins: {
+                        legend: { position: 'top', labels: { usePointStyle: true, font: { size: 11, weight: 'bold' } } },
+                        tooltip: {
+                            callbacks: {
+                                label: function(ctx) {
+                                    return `${ctx.dataset.label}: ${ctx.parsed.y.toFixed(3)} mol/L`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateChartData() {
+            if (!kineticsChart) return;
+
+            const numPoints = 100;
+            const timeLabels = [];
+            const caData = [], cbData = [], ccData = [];
+            const currentMarkerData = [];
+
+            const k1 = calcK1();
+            const k2 = calcK2();
+
+            const isThreeSpecies = (rxnType === 'series' || rxnType === 'parallel');
+
+            for (let i = 0; i <= numPoints; i++) {
+                const t = (tMax / numPoints) * i;
+                timeLabels.push(t.toFixed(1));
+
+                const { CA, CB, CC } = solveConcentrations(t, k1, k2);
+
+                caData.push(CA);
+                cbData.push(CB);
+                if (isThreeSpecies) ccData.push(CC);
+
+                if (Math.abs(t - currentTime) < (tMax / numPoints)) {
+                    currentMarkerData.push(CA);
+                } else {
+                    currentMarkerData.push(null);
+                }
+            }
+
+            kineticsChart.data.labels = timeLabels;
+            kineticsChart.data.datasets[0].data = caData;
+            kineticsChart.data.datasets[1].data = cbData;
+            
+            if (isThreeSpecies) {
+                kineticsChart.data.datasets[2].hidden = false;
+                kineticsChart.data.datasets[2].data = ccData;
+            } else {
+                kineticsChart.data.datasets[2].hidden = true;
+            }
+
+            kineticsChart.data.datasets[3].data = currentMarkerData;
+            kineticsChart.options.scales.y.suggestedMax = ca0 * 1.05;
+            kineticsChart.update('none');
+        }
+
+        // Animated Canvas Graphic Loop
+        function animationLoop() {
+            stirrerAngle += isRunning ? 0.15 : 0.01;
+            renderReactorGraphic();
+            requestAnimationFrame(animationLoop);
+        }
+
+        function renderReactorGraphic() {
+            if (!ctx) return;
+
+            const width = reactorCanvas.width;
+            const height = reactorCanvas.height;
+
+            const k1 = calcK1();
+            const k2 = calcK2();
+            const { CA, CB, CC } = solveConcentrations(currentTime, k1, k2);
+
+            const fracA = CA / ca0;
+            const fracB = CB / ca0;
+            const fracC = CC / ca0;
+
+            ctx.clearRect(0, 0, width, height);
+
+            const cx = width / 2;
+            const cy = height / 2 + 8;
+            const rWidth = 150;
+            const rHeight = 130;
+
+            // 1. Cooling/Heating Jacket
+            ctx.fillStyle = '#CBD5E1';
+            ctx.strokeStyle = '#64748B';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.roundRect(cx - rWidth/2 - 10, cy - rHeight/2 - 5, rWidth + 20, rHeight + 18, [8, 8, 25, 25]);
+            ctx.fill();
+            ctx.stroke();
+
+            // Thermal Jacket Fluid Color
+            const tempNorm = Math.min(1, Math.max(0, (tempK - 273) / (450 - 273)));
+            const jacketRed = Math.round(50 + tempNorm * 205);
+            const jacketBlue = Math.round(230 - tempNorm * 190);
+            ctx.fillStyle = `rgba(${jacketRed}, 90, ${jacketBlue}, 0.35)`;
+            ctx.fill();
+
+            // 2. Reactor Vessel Interior
+            ctx.fillStyle = '#FFFFFF';
+            ctx.beginPath();
+            ctx.roundRect(cx - rWidth/2, cy - rHeight/2, rWidth, rHeight, [4, 4, 20, 20]);
+            ctx.fill();
+            ctx.strokeStyle = '#475569';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // 3. Mixed Liquid Liquid Color Interpolation
+            // Species A = Purple (79, 41, 132), B = Gold (255, 199, 44), C = Teal (20, 184, 166)
+            const rComp = Math.round(79 * fracA + 255 * fracB + 20 * fracC);
+            const gComp = Math.round(41 * fracA + 199 * fracB + 184 * fracC);
+            const bComp = Math.round(132 * fracA + 44 * fracB + 166 * fracC);
+
+            const liquidFillY = cy - rHeight/2 + 22;
+            const liquidHeight = rHeight - 26;
+
+            const liquidGrad = ctx.createLinearGradient(0, liquidFillY, 0, liquidFillY + liquidHeight);
+            liquidGrad.addColorStop(0, `rgba(${rComp}, ${gComp}, ${bComp}, 0.75)`);
+            liquidGrad.addColorStop(1, `rgba(${rComp * 0.8}, ${gComp * 0.8}, ${bComp * 0.8}, 0.95)`);
+
+            ctx.fillStyle = liquidGrad;
+            ctx.beginPath();
+            ctx.roundRect(cx - rWidth/2 + 3, liquidFillY, rWidth - 6, liquidHeight - 3, [0, 0, 18, 18]);
+            ctx.fill();
+
+            // 4. Stirrer & Impeller
+            ctx.save();
+            ctx.fillStyle = '#334155';
+            ctx.strokeStyle = '#334155';
+            ctx.fillRect(cx - 16, cy - rHeight/2 - 20, 32, 16); // Motor
+
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.moveTo(cx, cy - rHeight/2 - 4);
+            ctx.lineTo(cx, cy + 30);
+            ctx.stroke();
+
+            ctx.translate(cx, cy + 30);
+            const scaleX = Math.cos(stirrerAngle);
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.ellipse(0, 0, 30 * Math.abs(scaleX) + 4, 7, 0, 0, Math.PI * 2);
+            ctx.fillStyle = '#1E293B';
+            ctx.fill();
+            ctx.stroke();
+            ctx.restore();
+
+            // 5. Molecular Particles
+            ctx.save();
+            particles.forEach((p, idx) => {
+                if (isRunning) {
+                    p.x += p.vx + Math.sin(stirrerAngle + idx) * 0.7;
+                    p.y += p.vy;
+
+                    if (p.x < -rWidth/2 + 12 || p.x > rWidth/2 - 12) p.vx *= -1;
+                    if (p.y < -25 || p.y > 40) p.vy *= -1;
+                }
+
+                // Determine particle species
+                const randVal = (idx / NUM_PARTICLES);
+                let pColor = '#4F2984'; // Species A
+                let pBorder = '#FFFFFF';
+
+                if (randVal < fracB) {
+                    pColor = '#FFC72C'; // Species B
+                    pBorder = '#B45309';
+                } else if (randVal < (fracB + fracC)) {
+                    pColor = '#14B8A6'; // Species C
+                    pBorder = '#0F766E';
+                }
+
+                ctx.beginPath();
+                ctx.arc(cx + p.x, cy + 8 + p.y, p.radius, 0, Math.PI * 2);
+                ctx.fillStyle = pColor;
+                ctx.strokeStyle = pBorder;
+                ctx.lineWidth = 1;
+                ctx.fill();
+                ctx.stroke();
+            });
+            ctx.restore();
+
+            // 6. Thermal vapor at high temperatures
+            if (tempK > 360) {
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.35)';
+                const steamOffset = (Date.now() / 25) % 18;
+                ctx.beginPath();
+                ctx.arc(cx - 18, cy - rHeight/2 + 12 - steamOffset, 5, 0, Math.PI * 2);
+                ctx.arc(cx + 20, cy - rHeight/2 + 8 - (steamOffset * 0.7), 7, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+    </script>
+</body>
+</html>
