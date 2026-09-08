@@ -1,1 +1,120 @@
+<!-- ... existing code ... -->
+                        <!-- Reaction 2 Arrhenius Parameters (A2, Ea2) - Visible for Reversible, Series, Parallel -->
+                        <div id="rxn2Section" class="hidden p-3 bg-teal-50 border border-teal-200 rounded-lg space-y-3">
+                            <div class="font-bold text-teal-900 text-xs uppercase tracking-wide flex justify-between items-center">
+                                <span id="rxn2Label">Secondary Step Kinetics ($k_2$)</span>
+                                <span id="k2Display" class="font-mono font-bold text-teal-700 text-xs">k₂ = 0.0120</span>
+                            </div>
 
+                            <!-- Activation Energy Ea2 -->
+<!-- ... existing code ... -->
+                        <!-- Conversion X_A -->
+                        <div class="flex justify-between items-center bg-emerald-50 p-2 rounded-lg border border-emerald-100">
+                            <span class="text-emerald-800 font-semibold">Conversion ($X_A$)</span>
+                            <span class="font-mono font-bold text-emerald-700 text-sm">
+                                <span id="kpiXa">0.0</span> %
+                            </span>
+                        </div>
+
+                        <!-- Production Rate RA -->
+                        <div class="flex justify-between items-center bg-slate-50 p-2 rounded-lg border border-slate-100">
+                            <span class="text-slate-500 font-medium">Production Rate ($R_A$)</span>
+                            <span class="font-mono font-bold text-slate-800 text-xs">
+                                <span id="kpiRate">-0.0900</span> mol/(L·s)
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Bottom Container: Concentration vs Time Plot -->
+            <div class="bg-white p-4 rounded-xl shadow-md border border-slate-200 flex-1 flex flex-col">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-2">
+                    <div>
+                        <h3 class="font-bold text-ttu-purple text-sm flex items-center gap-2">
+                            <i class="fa-solid fa-chart-line text-ttu-gold"></i> Species Concentrations vs. Time
+                        </h3>
+                        <p class="text-xs text-slate-500">Dynamic concentration trajectories $C_i(t)$ governed by production rates $R_i = \sum \nu_{ij} r_j$</p>
+                    </div>
+                </div>
+
+                <!-- Plot Area -->
+<!-- ... existing code ... -->
+            if (rxnType === '1_irrev') {
+                orderBadge.textContent = "1st Order Irreversible";
+                headerTitle.innerHTML = "Reaction Scheme: <strong>A &rarr; B (1st Order)</strong>";
+                formulaBox.innerHTML = "$$r_1 = k_1 C_A, \\quad R_A = -r_1, \\quad R_B = r_1$$";
+            } else if (rxnType === '1_rev') {
+                rxn2Section.classList.remove('hidden');
+                document.getElementById('rxn1Label').textContent = "Forward Step (k₁)";
+                document.getElementById('rxn2Label').textContent = "Reverse Step (k₂)";
+                orderBadge.textContent = "1st Order Reversible";
+                headerTitle.innerHTML = "Reaction Scheme: <strong>A &rightleftharpoons; B</strong>";
+                formulaBox.innerHTML = "$$r_1 = k_1 C_A, \\, r_2 = k_2 C_B \\quad \\Rightarrow \\quad R_A = -r_1 + r_2, \\, R_B = r_1 - r_2$$";
+            } else if (rxnType === '2_irrev') {
+                orderBadge.textContent = "2nd Order Irreversible";
+                headerTitle.innerHTML = "Reaction Scheme: <strong>A &rarr; B (2nd Order)</strong>";
+                formulaBox.innerHTML = "$$r_1 = k_1 C_A^2, \\quad R_A = -r_1, \\quad R_B = r_1$$";
+            } else if (rxnType === 'n_order') {
+                nOrderContainer.classList.remove('hidden');
+                orderBadge.textContent = "n-th Order Irreversible";
+                headerTitle.innerHTML = "Reaction Scheme: <strong>A &rarr; B (n-th Order)</strong>";
+                formulaBox.innerHTML = "$$r_1 = k_1 C_A^n, \\quad R_A = -r_1, \\quad R_B = r_1$$";
+            } else if (rxnType === 'series') {
+                rxn2Section.classList.remove('hidden');
+                kpiRowCC.classList.remove('hidden');
+                legendSpeciesC.classList.remove('hidden');
+                document.getElementById('rxn1Label').textContent = "Step 1: A → B (k₁)";
+                document.getElementById('rxn2Label').textContent = "Step 2: B → C (k₂)";
+                orderBadge.textContent = "Series Reactions (A → B → C)";
+                headerTitle.innerHTML = "Reaction Scheme: <strong>A &rarr; B &rarr; C</strong>";
+                formulaBox.innerHTML = "$$r_1 = k_1 C_A, \\, r_2 = k_2 C_B \\quad \\Rightarrow \\quad R_A = -r_1, \\, R_B = r_1 - r_2, \\, R_C = r_2$$";
+            } else if (rxnType === 'parallel') {
+                rxn2Section.classList.remove('hidden');
+                kpiRowCC.classList.remove('hidden');
+                legendSpeciesC.classList.remove('hidden');
+                document.getElementById('rxn1Label').textContent = "Branch 1: A → B (k₁)";
+                document.getElementById('rxn2Label').textContent = "Branch 2: A → C (k₂)";
+                orderBadge.textContent = "Parallel Reactions (A → B, A → C)";
+                headerTitle.innerHTML = "Reaction Scheme: <strong>A &rarr; B , A &rarr; C</strong>";
+                formulaBox.innerHTML = "$$r_1 = k_1 C_A, \\, r_2 = k_2 C_A \\quad \\Rightarrow \\quad R_A = -r_1 - r_2, \\, R_B = r_1, \\, R_C = r_2$$";
+            }
+
+            // Re-render MathJax expressions in formula Box
+<!-- ... existing code ... -->
+            return { CA, CB, CC };
+        }
+
+        // Calculate Production Rate RA = dCA/dt
+        function calculateProductionRateA(CA, CB, k1, k2) {
+            if (rxnType === '1_irrev') return -k1 * CA;
+            if (rxnType === '1_rev') return -k1 * CA + k2 * CB;
+            if (rxnType === '2_irrev') return -k1 * CA * CA;
+            if (rxnType === 'n_order') return -k1 * Math.pow(Math.max(0, CA), nOrder);
+            if (rxnType === 'series') return -k1 * CA;
+            if (rxnType === 'parallel') return -(k1 + k2) * CA;
+            return 0;
+        }
+
+        // Update Slider Values & Recalculate State
+<!-- ... existing code ... -->
+        // Update Digital Gauges
+        function updateKPIs() {
+            const k1 = calcK1();
+            const k2 = calcK2();
+
+            const { CA, CB, CC } = solveConcentrations(currentTime, k1, k2);
+            const rateA = calculateProductionRateA(CA, CB, k1, k2);
+            const XA = ((ca0 - CA) / ca0) * 100;
+
+            document.getElementById('kpiTime').textContent = currentTime.toFixed(1);
+            document.getElementById('kpiCA').textContent = CA.toFixed(3);
+            document.getElementById('kpiCB').textContent = CB.toFixed(3);
+            document.getElementById('kpiCC').textContent = CC.toFixed(3);
+            document.getElementById('kpiXa').textContent = Math.max(0, XA).toFixed(1);
+            document.getElementById('kpiRate').textContent = Math.abs(rateA) < 0.0001 ? rateA.toExponential(3) : rateA.toFixed(4);
+        }
+
+        // Chart.js Setup and Data Updates
+<!-- ... existing code ... -->
