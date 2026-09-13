@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tennessee Tech - CSTR Reactor Kinetics Simulator</title>
+    <title>Tennessee Tech - Liquid-Phase CSTR Reactor Kinetics Simulator</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Chart.js -->
@@ -58,7 +58,6 @@
 </head>
 <body class="bg-slate-100 text-slate-800 font-sans min-h-screen flex flex-col">
 
-    <!-- Header / Branding Bar -->
     <header class="bg-ttu-gradient text-white shadow-md border-b-4 border-ttu-gold px-4 py-3">
         <div class="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-2">
             <div class="flex items-center space-x-3">
@@ -66,18 +65,22 @@
                     TTU
                 </div>
                 <div>
-                    <h1 class="font-bold text-lg leading-tight tracking-wide">CSTR Reactor Kinetics Simulator</h1>
+                    <h1 class="font-bold text-lg leading-tight tracking-wide flex items-center gap-2">
+                        Liquid-Phase CSTR Reactor Kinetics Simulator
+                        <span class="text-[10px] bg-emerald-500/30 text-emerald-200 border border-emerald-400/40 px-2 py-0.5 rounded-full font-mono font-normal">
+                            Liquid Phase (V = Constant)
+                        </span>
+                    </h1>
                     <p class="text-xs text-ttu-goldLight opacity-90">Department of Chemical & Biomolecular Engineering • Continuous Stirred-Tank Reactor</p>
                 </div>
             </div>
             <div class="flex items-center space-x-2 text-xs bg-ttu-purpleDark/60 px-3 py-1.5 rounded-full border border-ttu-gold/40">
-                <i class="fa-solid fa-[#FFC72C] fa-recycle text-ttu-gold animate-spin" style="animation-duration: 10s;"></i>
+                <i class="fa-solid fa-recycle text-ttu-gold animate-spin" style="animation-duration: 10s;"></i>
                 <span id="headerReactionTitle">Reaction Scheme: <strong>A &rarr; B (1st Order)</strong></span>
             </div>
         </div>
     </header>
 
-    <!-- Main Content Container -->
     <main class="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-5 grid grid-cols-1 lg:grid-cols-12 gap-5">
         
         <!-- Left Panel: Controls & Reaction Parameters (5 cols) -->
@@ -111,18 +114,18 @@
                 <!-- Rate Law & CSTR Mass Balance Equation Box -->
                 <div class="bg-purple-50 p-3 rounded-lg border border-purple-200 text-xs">
                     <div class="text-ttu-purple font-bold mb-1 flex items-center justify-between">
-                        <span>CSTR Mass Balance (Rawlings & Ekerdt)</span>
+                        <span>Liquid-Phase CSTR Mass Balance ($\rho = \text{const}$)</span>
                         <span class="text-[10px] text-slate-500 font-normal">$\tau = V / v_0$</span>
                     </div>
                     <div id="formulaBox" class="font-mono text-slate-800 text-center py-1.5 bg-white rounded border border-purple-100 shadow-inner overflow-x-auto">
-                        $$\frac{dC_A}{dt} = \frac{C_{A0} - C_A}{\tau} - k_1 C_A, \quad C_{A,ss} = \frac{C_{A0}}{1 + k_1 \tau}$$
+                        $$\frac{dC_A}{dt} = \frac{C_{Af} - C_A}{\tau} - k_1 C_A, \quad C_{A,ss} = \frac{C_{Af}}{1 + k_1 \tau}$$
                     </div>
                 </div>
 
                 <!-- CSTR Flow & Volume Controls -->
                 <div class="p-3 bg-amber-50/60 border border-amber-200 rounded-lg space-y-3">
                     <div class="font-bold text-amber-900 text-xs uppercase tracking-wide flex justify-between items-center">
-                        <span><i class="fa-solid fa-faucet-drip text-amber-600 mr-1"></i> Flow & Reactor Sizing</span>
+                        <span><i class="fa-solid fa-faucet-drip text-amber-600 mr-1"></i> Flow & Reactor Sizing (Liquid Phase)</span>
                         <span class="font-mono font-bold text-amber-800 text-xs bg-amber-100 px-2 py-0.5 rounded">
                             Space Time $\tau$ = <span id="tauDisplay">20.0</span> s
                         </span>
@@ -151,13 +154,42 @@
                     </div>
                 </div>
 
-                <!-- Initial Condition Selector (Startup) -->
-                <div class="flex items-center justify-between bg-slate-50 p-2.5 rounded-lg border border-slate-200 text-xs">
-                    <span class="font-semibold text-slate-700">Initial Vessel State ($t=0$):</span>
-                    <select id="initCondSelect" onchange="resetSim()" class="bg-white border border-slate-300 font-semibold text-slate-700 rounded px-2 py-1 focus:outline-none">
-                        <option value="solvent">Pure Solvent ($C_A = 0$)</option>
-                        <option value="feed">Filled with Feed ($C_A = C_{A0}$)</option>
-                    </select>
+                <!-- Feed Concentration (CAf) -->
+                <div class="p-3 bg-emerald-50/60 border border-emerald-200 rounded-lg space-y-3">
+                    <div class="font-bold text-emerald-900 text-xs uppercase tracking-wide">
+                        <i class="fa-solid fa-vial text-emerald-600 mr-1"></i> Feed Stream Concentration
+                    </div>
+
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <label for="cafInput" class="font-semibold text-slate-700 text-xs">Inlet Feed Concentration ($C_{Af}$)</label>
+                            <span class="font-mono font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded text-xs">
+                                <span id="cafValue">2.00</span> mol/L
+                            </span>
+                        </div>
+                        <input type="range" id="cafInput" min="0.2" max="5.0" value="2.0" step="0.1" 
+                               class="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-emerald-600"
+                               oninput="updateParams()">
+                    </div>
+                </div>
+
+                <!-- Initial Reactor Vessel Concentration (CA,init) -->
+                <div class="p-3 bg-blue-50/60 border border-blue-200 rounded-lg space-y-3">
+                    <div class="font-bold text-blue-900 text-xs uppercase tracking-wide flex justify-between items-center">
+                        <span><i class="fa-solid fa-flask text-blue-600 mr-1"></i> Vessel Startup Condition ($t=0$)</span>
+                    </div>
+
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <label for="cainitInput" class="font-semibold text-slate-700 text-xs">Initial Reactor Concentration ($C_{A,\text{init}}$)</label>
+                            <span class="font-mono font-bold text-blue-800 bg-blue-100 px-2 py-0.5 rounded text-xs">
+                                <span id="cainitValue">0.00</span> mol/L
+                            </span>
+                        </div>
+                        <input type="range" id="cainitInput" min="0.0" max="5.0" value="0.0" step="0.1" 
+                               class="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                               oninput="updateParams()">
+                    </div>
                 </div>
 
                 <!-- n-th Order Control -->
@@ -250,26 +282,11 @@
                     </div>
                 </div>
 
-                <!-- Feed Concentration (CA0) -->
-                <div>
-                    <div class="flex justify-between items-center mb-1">
-                        <label for="ca0Input" class="font-semibold text-slate-700 flex items-center gap-1.5 text-xs">
-                            <i class="fa-solid fa-vial text-emerald-600"></i> Feed Concentration ($C_{A0}$)
-                        </label>
-                        <span class="font-mono font-bold text-ttu-purple bg-purple-50 px-2 py-0.5 rounded border border-purple-200 text-xs">
-                            <span id="ca0Value">2.00</span> mol/L
-                        </span>
-                    </div>
-                    <input type="range" id="ca0Input" min="0.2" max="5.0" value="2.0" step="0.1" 
-                           class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-ttu-purple"
-                           oninput="updateParams()">
-                </div>
-
                 <!-- Total Simulation Horizon -->
                 <div>
                     <div class="flex justify-between items-center mb-1">
                         <label for="timeMaxInput" class="font-semibold text-slate-700 flex items-center gap-1.5 text-xs">
-                            <i class="fa-solid fa-stopwatch text-indigo-500"></i> Simulation Horizon ($t_{final}$)
+                            <i class="fa-solid fa-stopwatch text-indigo-500"></i> Simulation Horizon ($t_{\text{final}}$)
                         </label>
                         <span class="font-mono font-bold text-ttu-purple bg-purple-50 px-2 py-0.5 rounded border border-purple-200 text-xs">
                             <span id="timeMaxValue">120</span> s
@@ -288,7 +305,7 @@
                     <i id="playIcon" class="fa-solid fa-play"></i>
                     <span id="playText">Run</span>
                 </button>
-                <button onclick="jumpToSteadyState()" class="py-2.5 px-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg shadow-sm transition flex items-center justify-center gap-1" title="Jump directly to Steady State">
+                <button id="btnSS" onclick="jumpToSteadyState()" class="py-2.5 px-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg shadow-sm transition flex items-center justify-center gap-1" title="Jump directly to Steady State (dC/dt = 0)">
                     <i class="fa-solid fa-bolt"></i> SS
                 </button>
                 <button onclick="resetSim()" class="py-2.5 px-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded-lg transition flex items-center justify-center gap-1">
@@ -310,10 +327,10 @@
                 <div class="md:col-span-7 bg-white p-4 rounded-xl shadow-md border border-slate-200 flex flex-col items-center relative overflow-hidden">
                     <div class="w-full flex justify-between items-center mb-2">
                         <h3 class="font-bold text-ttu-purple text-sm flex items-center gap-2">
-                            <i class="fa-solid fa-arrows-spin text-ttu-gold"></i> CSTR Vessel Animation
+                            <i class="fa-solid fa-arrows-spin text-ttu-gold"></i> CSTR Vessel Schematic
                         </h3>
                         <span class="text-[11px] bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded border border-emerald-200 font-mono font-semibold">
-                            Continuous In/Out Stream
+                            Inlet ($C_{Af}$) / Outlet Flow
                         </span>
                     </div>
 
@@ -326,7 +343,7 @@
                     <div class="w-full flex flex-wrap justify-center items-center gap-4 mt-2 text-xs">
                         <div class="flex items-center gap-1.5">
                             <span class="w-3 h-3 rounded-full bg-ttu-purple inline-block"></span>
-                            <span class="text-slate-600 font-medium">Species A (Feed)</span>
+                            <span class="text-slate-600 font-medium">Species A (Feed $C_{Af}$)</span>
                         </div>
                         <div class="flex items-center gap-1.5">
                             <span class="w-3 h-3 rounded-full bg-ttu-gold inline-block"></span>
@@ -341,9 +358,14 @@
 
                 <!-- Digital Gauge KPIs (5 cols) -->
                 <div class="md:col-span-5 bg-white p-4 rounded-xl shadow-md border border-slate-200 flex flex-col justify-between space-y-2">
-                    <h3 class="font-bold text-ttu-purple text-sm flex items-center gap-2 border-b border-slate-100 pb-2">
-                        <i class="fa-solid fa-gauge-high"></i> Live CSTR Monitor
-                    </h3>
+                    <div class="flex justify-between items-center border-b border-slate-100 pb-2">
+                        <h3 class="font-bold text-ttu-purple text-sm flex items-center gap-2">
+                            <i class="fa-solid fa-gauge-high"></i> Live CSTR Monitor
+                        </h3>
+                        <span id="ssBadge" class="hidden bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded border border-emerald-300">
+                            At Steady State
+                        </span>
+                    </div>
 
                     <div class="space-y-1.5 flex-1 justify-center flex flex-col text-xs">
                         <!-- Time -->
@@ -417,7 +439,7 @@
                         <h3 class="font-bold text-ttu-purple text-sm flex items-center gap-2">
                             <i class="fa-solid fa-chart-line text-ttu-gold"></i> Dynamic Concentration Response $C_i(t)$
                         </h3>
-                        <p class="text-xs text-slate-500">Transient buildup towards steady state: $\frac{dC_i}{dt} = \frac{C_{i,in} - C_i}{\tau} + R_i$. Dashed lines indicate steady state values.</p>
+                        <p class="text-xs text-slate-500">Transient buildup towards steady state: $\frac{dC_i}{dt} = \frac{C_{i,in} - C_i}{\tau} + R_i$. Dashed horizontal lines represent steady-state asymptotes.</p>
                     </div>
                 </div>
 
@@ -446,8 +468,9 @@
         let ea1Kj = 45.0, freq1Exp = 6.0;
         let ea2Kj = 55.0, freq2Exp = 6.0;
         let nOrder = 1.5;
-        let ca0 = 2.0;
-        let v0 = 5.0; // Volumetric flow rate L/s
+        let caFeed = 2.0;   // Inlet Feed Concentration CAf
+        let caInit = 0.0;   // Initial Vessel Concentration CA,init at t=0
+        let v0 = 5.0;       // Volumetric flow rate L/s
         let reactorVol = 100.0; // Volume L
         let tMax = 120;
 
@@ -476,18 +499,18 @@
             requestAnimationFrame(animationLoop);
         });
 
-        // Initialize particles for CSTR inflow, agitation, and outflow
+        // Initialize particles constrained within physical reactor channels
         function initParticles() {
             particles = [];
             for (let i = 0; i < NUM_PARTICLES; i++) {
                 particles.push({
                     state: Math.random() < 0.2 ? 'inflow' : (Math.random() < 0.8 ? 'tank' : 'outflow'),
-                    x: Math.random() * 120 - 60,
-                    y: Math.random() * 90 - 45,
+                    x: (Math.random() - 0.5) * 110, // Tank relative x
+                    y: (Math.random() - 0.5) * 80,  // Tank relative y
                     vx: (Math.random() - 0.5) * 1.5,
                     vy: (Math.random() - 0.5) * 1.5,
                     pipeProgress: Math.random(),
-                    radius: Math.random() * 2.2 + 2.5
+                    radius: Math.random() * 2.0 + 2.5
                 });
             }
         }
@@ -523,23 +546,23 @@
             if (rxnType === '1_irrev') {
                 orderBadge.textContent = "1st Order Irreversible";
                 headerTitle.innerHTML = "Reaction Scheme: <strong>A &rarr; B (1st Order)</strong>";
-                formulaBox.innerHTML = "$$\\frac{dC_A}{dt} = \\frac{C_{A0} - C_A}{\\tau} - k_1 C_A, \\quad C_{A,ss} = \\frac{C_{A0}}{1 + k_1 \\tau}$$";
+                formulaBox.innerHTML = "$$\\frac{dC_A}{dt} = \\frac{C_{Af} - C_A}{\\tau} - k_1 C_A, \\quad C_{A,ss} = \\frac{C_{Af}}{1 + k_1 \\tau}$$";
             } else if (rxnType === '1_rev') {
                 rxn2Section.classList.remove('hidden');
                 document.getElementById('rxn1Label').textContent = "Forward Step (k₁)";
                 document.getElementById('rxn2Label').textContent = "Reverse Step (k₂)";
                 orderBadge.textContent = "1st Order Reversible";
                 headerTitle.innerHTML = "Reaction Scheme: <strong>A &rightleftharpoons; B</strong>";
-                formulaBox.innerHTML = "$$\\frac{dC_A}{dt} = \\frac{C_{A0} - C_A}{\\tau} - k_1 C_A + k_2 C_B, \\quad C_{A,ss} = C_{A0} \\frac{1 + k_2 \\tau}{1 + (k_1 + k_2)\\tau}$$";
+                formulaBox.innerHTML = "$$\\frac{dC_A}{dt} = \\frac{C_{Af} - C_A}{\\tau} - k_1 C_A + k_2 C_B, \\quad C_{A,ss} = C_{Af} \\frac{1 + k_2 \\tau}{1 + (k_1 + k_2)\\tau}$$";
             } else if (rxnType === '2_irrev') {
                 orderBadge.textContent = "2nd Order Irreversible";
                 headerTitle.innerHTML = "Reaction Scheme: <strong>A &rarr; B (2nd Order)</strong>";
-                formulaBox.innerHTML = "$$\\frac{dC_A}{dt} = \\frac{C_{A0} - C_A}{\\tau} - k_1 C_A^2, \\quad k_1 \\tau C_{A,ss}^2 + C_{A,ss} - C_{A0} = 0$$";
+                formulaBox.innerHTML = "$$\\frac{dC_A}{dt} = \\frac{C_{Af} - C_A}{\\tau} - k_1 C_A^2, \\quad k_1 \\tau C_{A,ss}^2 + C_{A,ss} - C_{Af} = 0$$";
             } else if (rxnType === 'n_order') {
                 nOrderContainer.classList.remove('hidden');
                 orderBadge.textContent = "n-th Order Irreversible";
                 headerTitle.innerHTML = "Reaction Scheme: <strong>A &rarr; B (n-th Order)</strong>";
-                formulaBox.innerHTML = "$$\\frac{dC_A}{dt} = \\frac{C_{A0} - C_A}{\\tau} - k_1 C_A^n$$";
+                formulaBox.innerHTML = "$$\\frac{dC_A}{dt} = \\frac{C_{Af} - C_A}{\\tau} - k_1 C_A^n$$";
             } else if (rxnType === 'series') {
                 rxn2Section.classList.remove('hidden');
                 kpiRowCC.classList.remove('hidden');
@@ -548,7 +571,7 @@
                 document.getElementById('rxn2Label').textContent = "Step 2: B → C (k₂)";
                 orderBadge.textContent = "Series Reactions (A → B → C)";
                 headerTitle.innerHTML = "Reaction Scheme: <strong>A &rarr; B &rarr; C</strong>";
-                formulaBox.innerHTML = "$$\\frac{dC_B}{dt} = -\\frac{C_B}{\\tau} + k_1 C_A - k_2 C_B, \\quad C_{B,ss} = \\frac{k_1 \\tau C_{A0}}{(1 + k_1 \\tau)(1 + k_2 \\tau)}$$";
+                formulaBox.innerHTML = "$$\\frac{dC_B}{dt} = -\\frac{C_B}{\\tau} + k_1 C_A - k_2 C_B, \\quad C_{B,ss} = \\frac{k_1 \\tau C_{Af}}{(1 + k_1 \\tau)(1 + k_2 \\tau)}$$";
             } else if (rxnType === 'parallel') {
                 rxn2Section.classList.remove('hidden');
                 kpiRowCC.classList.remove('hidden');
@@ -557,7 +580,7 @@
                 document.getElementById('rxn2Label').textContent = "Branch 2: A → C (k₂)";
                 orderBadge.textContent = "Parallel Reactions (A → B, A → C)";
                 headerTitle.innerHTML = "Reaction Scheme: <strong>A &rarr; B , A &rarr; C</strong>";
-                formulaBox.innerHTML = "$$\\frac{dC_A}{dt} = \\frac{C_{A0} - C_A}{\\tau} - (k_1 + k_2) C_A, \\quad C_{A,ss} = \\frac{C_{A0}}{1 + (k_1 + k_2)\\tau}$$";
+                formulaBox.innerHTML = "$$\\frac{dC_A}{dt} = \\frac{C_{Af} - C_A}{\\tau} - (k_1 + k_2) C_A, \\quad C_{A,ss} = \\frac{C_{Af}}{1 + (k_1 + k_2)\\tau}$$";
             }
 
             // Re-render MathJax expressions in formula Box
@@ -608,8 +631,8 @@
                 RC = r2;
             }
 
-            // CSTR Differential Equations: dCi/dt = (Ci_in - Ci)/tau + Ri
-            const dCAdt = (ca0 - CA) / tau + RA;
+            // CSTR Differential Equations: dCi/dt = (Ci_feed - Ci)/tau + Ri
+            const dCAdt = (caFeed - CA) / tau + RA;
             const dCBdt = (0 - CB) / tau + RB;
             const dCCdt = (0 - CC) / tau + RC;
 
@@ -621,47 +644,47 @@
             let ssCA = 0, ssCB = 0, ssCC = 0;
 
             if (rxnType === '1_irrev') {
-                ssCA = ca0 / (1 + k1 * tau);
-                ssCB = ca0 - ssCA;
+                ssCA = caFeed / (1 + k1 * tau);
+                ssCB = caFeed - ssCA;
                 ssCC = 0;
             } else if (rxnType === '1_rev') {
-                ssCA = ca0 * (1 + k2 * tau) / (1 + (k1 + k2) * tau);
-                ssCB = ca0 - ssCA;
+                ssCA = caFeed * (1 + k2 * tau) / (1 + (k1 + k2) * tau);
+                ssCB = caFeed - ssCA;
                 ssCC = 0;
             } else if (rxnType === '2_irrev') {
-                // Quadratic formula for k1*tau*CA^2 + CA - CA0 = 0
+                // Quadratic formula for k1*tau*CA^2 + CA - CAf = 0
                 const a = k1 * tau;
                 const b = 1;
-                const c = -ca0;
+                const c = -caFeed;
                 if (a === 0) {
-                    ssCA = ca0;
+                    ssCA = caFeed;
                 } else {
                     ssCA = (-b + Math.sqrt(b * b - 4 * a * c)) / (2 * a);
                 }
-                ssCB = ca0 - ssCA;
+                ssCB = caFeed - ssCA;
                 ssCC = 0;
             } else if (rxnType === 'n_order') {
-                // Solve via RK4 integration to large time t
-                let CA = ca0;
+                // Solve via numerical integration to large time t
+                let CA = caFeed;
                 for (let i = 0; i < 2000; i++) {
                     const r = k1 * Math.pow(Math.max(0, CA), nOrder);
-                    const deriv = (ca0 - CA) / tau - r;
+                    const deriv = (caFeed - CA) / tau - r;
                     CA += deriv * 0.1;
                 }
                 ssCA = Math.max(0, CA);
-                ssCB = ca0 - ssCA;
+                ssCB = caFeed - ssCA;
                 ssCC = 0;
             } else if (rxnType === 'series') {
-                ssCA = ca0 / (1 + k1 * tau);
-                ssCB = (k1 * tau * ca0) / ((1 + k1 * tau) * (1 + k2 * tau));
-                ssCC = ca0 - ssCA - ssCB;
+                ssCA = caFeed / (1 + k1 * tau);
+                ssCB = (k1 * tau * caFeed) / ((1 + k1 * tau) * (1 + k2 * tau));
+                ssCC = caFeed - ssCA - ssCB;
             } else if (rxnType === 'parallel') {
-                ssCA = ca0 / (1 + (k1 + k2) * tau);
+                ssCA = caFeed / (1 + (k1 + k2) * tau);
                 ssCB = k1 * tau * ssCA;
                 ssCC = k2 * tau * ssCA;
             }
 
-            const ssXA = ((ca0 - ssCA) / ca0) * 100;
+            const ssXA = caFeed > 0 ? ((caFeed - ssCA) / caFeed) * 100 : 0;
             return { ssCA, ssCB, ssCC, ssXA };
         }
 
@@ -670,8 +693,7 @@
             const steps = Math.max(100, Math.floor(targetTime * 10));
             const dt = targetTime > 0 ? targetTime / steps : 0;
 
-            const initCond = document.getElementById('initCondSelect').value;
-            let CA = initCond === 'feed' ? ca0 : 0;
+            let CA = caInit; // User-configured initial reactor concentration
             let CB = 0, CC = 0;
 
             if (targetTime <= 0) return { CA, CB, CC };
@@ -720,7 +742,8 @@
             ea2Kj = parseFloat(document.getElementById('ea2Input').value);
             freq2Exp = parseFloat(document.getElementById('freq2Input').value);
             nOrder = parseFloat(document.getElementById('nOrderInput').value);
-            ca0 = parseFloat(document.getElementById('ca0Input').value);
+            caFeed = parseFloat(document.getElementById('cafInput').value);
+            caInit = parseFloat(document.getElementById('cainitInput').value);
             v0 = parseFloat(document.getElementById('v0Input').value);
             reactorVol = parseFloat(document.getElementById('volInput').value);
             tMax = parseFloat(document.getElementById('timeMaxInput').value);
@@ -735,7 +758,8 @@
             document.getElementById('ea2Value').textContent = ea2Kj.toFixed(1);
             document.getElementById('freq2Value').textContent = freq2Exp.toFixed(1);
             document.getElementById('nOrderValue').textContent = nOrder.toFixed(2);
-            document.getElementById('ca0Value').textContent = ca0.toFixed(2);
+            document.getElementById('cafValue').textContent = caFeed.toFixed(2);
+            document.getElementById('cainitValue').textContent = caInit.toFixed(2);
             document.getElementById('v0Value').textContent = v0.toFixed(1);
             document.getElementById('volValue').textContent = reactorVol.toFixed(0);
             document.getElementById('tauDisplay').textContent = tau.toFixed(1);
@@ -752,6 +776,14 @@
             document.getElementById('k2Display').textContent = `k₂ = ${k2 < 0.001 ? k2.toExponential(3) : k2.toFixed(4)}`;
 
             if (currentTime > tMax) currentTime = tMax;
+
+            // Toggle SS badge if user is at max horizon time
+            const ssBadge = document.getElementById('ssBadge');
+            if (currentTime >= tMax - 0.1) {
+                ssBadge.classList.remove('hidden');
+            } else {
+                ssBadge.classList.add('hidden');
+            }
 
             updateChartData();
             updateKPIs();
@@ -787,7 +819,7 @@
 
         function jumpToSteadyState() {
             if (isRunning) togglePlay();
-            currentTime = tMax;
+            currentTime = tMax; // Jump directly to steady state asymptote horizon
             updateParams();
         }
 
@@ -816,7 +848,7 @@
 
             const { CA, CB, CC } = solveConcentrations(currentTime, k1, k2, tau);
             const { ssCA, ssCB, ssCC, ssXA } = calculateSteadyState(k1, k2, tau);
-            const XA = ((ca0 - CA) / ca0) * 100;
+            const XA = caFeed > 0 ? ((caFeed - CA) / caFeed) * 100 : 0;
 
             document.getElementById('kpiTime').textContent = currentTime.toFixed(1);
             document.getElementById('kpiCA').textContent = CA.toFixed(3);
@@ -915,7 +947,7 @@
                         y: {
                             title: { display: true, text: 'Concentration (mol/L)', font: { weight: 'bold', size: 11 } },
                             beginAtZero: true,
-                            suggestedMax: ca0 * 1.05,
+                            suggestedMax: Math.max(caFeed, caInit) * 1.05,
                             grid: { color: '#F1F5F9' }
                         }
                     },
@@ -984,7 +1016,7 @@
             kineticsChart.data.datasets[4].data = ssCbData;
             kineticsChart.data.datasets[5].data = currentMarkerData;
 
-            kineticsChart.options.scales.y.suggestedMax = ca0 * 1.05;
+            kineticsChart.options.scales.y.suggestedMax = Math.max(0.1, caFeed, caInit) * 1.1;
             kineticsChart.update('none');
         }
 
@@ -1006,9 +1038,10 @@
             const tau = reactorVol / v0;
             const { CA, CB, CC } = solveConcentrations(currentTime, k1, k2, tau);
 
-            const fracA = ca0 > 0 ? CA / ca0 : 0;
-            const fracB = ca0 > 0 ? CB / ca0 : 0;
-            const fracC = ca0 > 0 ? CC / ca0 : 0;
+            const totalC = CA + CB + CC;
+            const fracA = totalC > 0 ? CA / totalC : 1;
+            const fracB = totalC > 0 ? CB / totalC : 0;
+            const fracC = totalC > 0 ? CC / totalC : 0;
 
             ctx.clearRect(0, 0, width, height);
 
@@ -1017,22 +1050,33 @@
             const rWidth = 140;
             const rHeight = 120;
 
-            // 1. Inflow Pipe (Top Left)
+            // Reactor Tank Boundaries for particle collision
+            const tankMinX = -rWidth / 2 + 8;
+            const tankMaxX = rWidth / 2 - 8;
+            const liquidFillY = cy - rHeight / 2 + 15;
+            const liquidHeight = rHeight - 18;
+            const tankMinY = liquidFillY - cy + 6;
+            const tankMaxY = liquidFillY + liquidHeight - cy - 8;
+
+            // 1. Inflow Pipe (Top Left Entry)
+            const pipeInX = cx - 50;
+            const pipeInWidth = 16;
             ctx.fillStyle = '#94A3B8';
-            ctx.fillRect(cx - 50, 10, 16, cy - rHeight/2 - 10 + 5);
+            ctx.fillRect(pipeInX, 10, pipeInWidth, cy - rHeight/2 - 10 + 5);
             ctx.strokeStyle = '#475569';
             ctx.lineWidth = 2;
-            ctx.strokeRect(cx - 50, 10, 16, cy - rHeight/2 - 10 + 5);
+            ctx.strokeRect(pipeInX, 10, pipeInWidth, cy - rHeight/2 - 10 + 5);
 
-            // Inflow Liquid Stream inside pipe
-            ctx.fillStyle = 'rgba(79, 41, 132, 0.85)'; // Pure reactant A (Purple)
-            ctx.fillRect(cx - 47, 10, 10, cy - rHeight/2 - 10 + 8);
+            // Inflow Stream Fluid (Pure Species A / Feed C_Af)
+            ctx.fillStyle = 'rgba(79, 41, 132, 0.85)';
+            ctx.fillRect(pipeInX + 3, 10, pipeInWidth - 6, cy - rHeight/2 - 10 + 8);
 
             // 2. Outflow Pipe (Right Side Overflow)
             const pipeY = cy - 10;
+            const pipeOutX = cx + rWidth/2 - 2;
             ctx.fillStyle = '#94A3B8';
-            ctx.fillRect(cx + rWidth/2 - 2, pipeY, 50, 16);
-            ctx.strokeRect(cx + rWidth/2 - 2, pipeY, 50, 16);
+            ctx.fillRect(pipeOutX, pipeY, 52, 16);
+            ctx.strokeRect(pipeOutX, pipeY, 52, 16);
 
             // 3. Cooling/Heating Jacket
             ctx.fillStyle = '#CBD5E1';
@@ -1064,9 +1108,6 @@
             const gComp = Math.round(41 * fracA + 199 * fracB + 184 * fracC);
             const bComp = Math.round(132 * fracA + 44 * fracB + 166 * fracC);
 
-            const liquidFillY = cy - rHeight/2 + 15;
-            const liquidHeight = rHeight - 18;
-
             const liquidGrad = ctx.createLinearGradient(0, liquidFillY, 0, liquidFillY + liquidHeight);
             liquidGrad.addColorStop(0, `rgba(${rComp}, ${gComp}, ${bComp}, 0.75)`);
             liquidGrad.addColorStop(1, `rgba(${rComp * 0.8}, ${gComp * 0.8}, ${bComp * 0.8}, 0.95)`);
@@ -1078,12 +1119,12 @@
 
             // Outflow Liquid Stream in right pipe
             ctx.fillStyle = `rgba(${rComp}, ${gComp}, ${bComp}, 0.85)`;
-            ctx.fillRect(cx + rWidth/2, pipeY + 3, 48, 10);
+            ctx.fillRect(pipeOutX + 2, pipeY + 3, 48, 10);
 
-            // 6. Stirrer & Motor
+            // 6. Stirrer & Agitator Motor
             ctx.save();
             ctx.fillStyle = '#334155';
-            ctx.fillRect(cx - 14, cy - rHeight/2 - 18, 28, 14); // Motor
+            ctx.fillRect(cx - 14, cy - rHeight/2 - 18, 28, 14);
 
             ctx.strokeStyle = '#334155';
             ctx.lineWidth = 4;
@@ -1103,43 +1144,46 @@
             ctx.stroke();
             ctx.restore();
 
-            // 7. Dynamic Flow Particles (Inflow -> Tank Swirl -> Outflow)
+            // 7. Strictly Bounded Flow Particles (Inflow -> Tank Swirl -> Outflow)
             ctx.save();
             const flowSpeed = (v0 / 5.0) * (isRunning ? 1.0 : 0.2);
 
             particles.forEach((p, idx) => {
                 if (p.state === 'inflow') {
                     p.pipeProgress += 0.02 * flowSpeed;
-                    const pX = cx - 42;
-                    const pY = 10 + p.pipeProgress * (cy - rHeight/2);
+                    const pX = pipeInX + pipeInWidth / 2;
+                    const pY = 10 + p.pipeProgress * (liquidFillY - 10);
                     
                     ctx.beginPath();
                     ctx.arc(pX, pY, p.radius, 0, Math.PI * 2);
-                    ctx.fillStyle = '#4F2984'; // Reactant A (Feed)
+                    ctx.fillStyle = '#4F2984'; // Reactant A (Feed CAf)
                     ctx.strokeStyle = '#FFFFFF';
                     ctx.fill();
                     ctx.stroke();
 
                     if (p.pipeProgress >= 1.0) {
                         p.state = 'tank';
-                        p.x = -35 + Math.random() * 20;
-                        p.y = -rHeight/2 + 25;
+                        p.x = -rWidth/2 + 25 + Math.random() * 20;
+                        p.y = tankMinY + 10;
                         p.pipeProgress = 0;
                     }
                 } else if (p.state === 'tank') {
                     p.x += p.vx + Math.sin(stirrerAngle + idx) * 0.8;
                     p.y += p.vy;
 
-                    if (p.x < -rWidth/2 + 10 || p.x > rWidth/2 - 10) p.vx *= -1;
-                    if (p.y < -rHeight/2 + 20 || p.y > rHeight/2 - 15) p.vy *= -1;
+                    // Hard collision bounds inside reactor liquid space
+                    if (p.x < tankMinX) { p.x = tankMinX; p.vx *= -1; }
+                    if (p.x > tankMaxX) { p.x = tankMaxX; p.vx *= -1; }
+                    if (p.y < tankMinY) { p.y = tankMinY; p.vy *= -1; }
+                    if (p.y > tankMaxY) { p.y = tankMaxY; p.vy *= -1; }
 
-                    // Random chance to exit through overflow pipe if near right opening
-                    if (p.x > rWidth/2 - 25 && Math.abs(p.y - (pipeY - cy)) < 15 && Math.random() < 0.05 * flowSpeed) {
+                    // Transition to outflow stream if near right overflow pipe port
+                    if (p.x > tankMaxX - 15 && Math.abs(p.y - (pipeY - cy + 8)) < 12 && Math.random() < 0.05 * flowSpeed) {
                         p.state = 'outflow';
                         p.pipeProgress = 0;
                     }
 
-                    // Species color inside tank
+                    // Dynamic molecule species color inside tank
                     const randVal = (idx / NUM_PARTICLES);
                     let pColor = '#4F2984';
                     let pBorder = '#FFFFFF';
@@ -1162,10 +1206,9 @@
 
                 } else if (p.state === 'outflow') {
                     p.pipeProgress += 0.02 * flowSpeed;
-                    const pX = cx + rWidth/2 + p.pipeProgress * 45;
+                    const pX = pipeOutX + p.pipeProgress * 48;
                     const pY = pipeY + 8;
 
-                    // Color of outflow species
                     const randVal = (idx / NUM_PARTICLES);
                     let pColor = '#4F2984';
                     if (randVal < fracB) pColor = '#FFC72C';
@@ -1186,13 +1229,13 @@
             });
             ctx.restore();
 
-            // 8. Thermal vapor at high temperatures
+            // 8. Vapor rising at high temperatures (>360 K)
             if (tempK > 360) {
                 ctx.fillStyle = 'rgba(255, 255, 255, 0.35)';
                 const steamOffset = (Date.now() / 25) % 18;
                 ctx.beginPath();
-                ctx.arc(cx - 10, cy - rHeight/2 + 8 - steamOffset, 5, 0, Math.PI * 2);
-                ctx.arc(cx + 25, cy - rHeight/2 + 5 - (steamOffset * 0.7), 7, 0, Math.PI * 2);
+                ctx.arc(cx - 10, liquidFillY - steamOffset, 4, 0, Math.PI * 2);
+                ctx.arc(cx + 25, liquidFillY - 5 - (steamOffset * 0.7), 6, 0, Math.PI * 2);
                 ctx.fill();
             }
         }
