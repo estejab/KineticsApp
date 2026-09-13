@@ -305,13 +305,13 @@
                     <i id="playIcon" class="fa-solid fa-play"></i>
                     <span id="playText">Run</span>
                 </button>
-                <button id="btnSS" onclick="jumpToSteadyState()" class="py-2.5 px-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg shadow-sm transition flex items-center justify-center gap-1" title="Jump directly to Steady State (dC/dt = 0)">
+                <button id="btnSS" onclick="toggleSteadyState()" class="py-2.5 px-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg shadow-sm transition flex items-center justify-center gap-1" title="Toggle Steady State Mode (dC/dt = 0)">
                     <i class="fa-solid fa-bolt"></i> SS
                 </button>
                 <button onclick="resetSim()" class="py-2.5 px-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded-lg transition flex items-center justify-center gap-1">
                     <i class="fa-solid fa-rotate-left"></i> Reset
                 </button>
-                <button onclick="stepForward()" class="py-2.5 px-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded-lg transition flex items-center justify-center gap-1">
+                <button id="btnStep" onclick="stepForward()" class="py-2.5 px-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded-lg transition flex items-center justify-center gap-1">
                     <i class="fa-solid fa-forward-step"></i> Step
                 </button>
             </div>
@@ -433,7 +433,7 @@
             </div>
 
             <!-- Bottom Container: Dynamic CSTR Trajectory Plot -->
-            <div class="bg-white p-4 rounded-xl shadow-md border border-slate-200 flex-1 flex flex-col">
+                <!-- Dynamic CSTR Trajectory Plot -->
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-2">
                     <div>
                         <h3 class="font-bold text-ttu-purple text-sm flex items-center gap-2">
@@ -444,7 +444,7 @@
                 </div>
 
                 <!-- Plot Area -->
-                <div class="relative flex-1 min-h-[250px] w-full">
+                <div id="chartContainer" class="relative flex-1 min-h-[250px] w-full transition-all duration-300">
                     <canvas id="kineticsChart"></canvas>
                 </div>
             </div>
@@ -476,6 +476,7 @@
 
         let currentTime = 0;
         let isRunning = false;
+        let isSSLocked = false;
         let timerId = null;
 
         // Visual animation parameters
@@ -791,6 +792,8 @@
 
         // Play / Pause Controls
         function togglePlay() {
+            if (isSSLocked) return;
+
             isRunning = !isRunning;
             const playText = document.getElementById('playText');
             const playIcon = document.getElementById('playIcon');
@@ -812,18 +815,62 @@
         }
 
         function resetSim() {
-            if (isRunning) togglePlay();
+            if (isSSLocked) {
+                toggleSteadyState();
+            } else if (isRunning) {
+                togglePlay();
+            }
             currentTime = 0;
             updateParams();
         }
 
-        function jumpToSteadyState() {
-            if (isRunning) togglePlay();
-            currentTime = tMax; // Jump directly to steady state asymptote horizon
+        function toggleSteadyState() {
+            isSSLocked = !isSSLocked;
+            const btnSS = document.getElementById('btnSS');
+            const btnPlay = document.getElementById('btnPlay');
+            const btnStep = document.getElementById('btnStep');
+            const chartContainer = document.getElementById('chartContainer');
+
+            if (isSSLocked) {
+                if (isRunning) togglePlay();
+                currentTime = tMax;
+
+                // SS Button visual active state
+                btnSS.className = "py-2.5 px-2 bg-emerald-900 text-emerald-200 ring-2 ring-emerald-400 font-black rounded-lg shadow-inner transition flex items-center justify-center gap-1";
+                btnSS.innerHTML = '<i class="fa-solid fa-lock text-ttu-gold"></i> SS Locked';
+
+                // Disable Run and Step buttons
+                btnPlay.disabled = true;
+                btnPlay.classList.add('opacity-40', 'cursor-not-allowed');
+                if (btnStep) {
+                    btnStep.disabled = true;
+                    btnStep.classList.add('opacity-40', 'cursor-not-allowed');
+                }
+
+                // Gray out chart container
+                chartContainer.classList.add('grayscale', 'opacity-50', 'pointer-events-none');
+            } else {
+                // Restore SS Button state
+                btnSS.className = "py-2.5 px-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg shadow-sm transition flex items-center justify-center gap-1";
+                btnSS.innerHTML = '<i class="fa-solid fa-bolt"></i> SS';
+
+                // Re-enable buttons
+                btnPlay.disabled = false;
+                btnPlay.classList.remove('opacity-40', 'cursor-not-allowed');
+                if (btnStep) {
+                    btnStep.disabled = false;
+                    btnStep.classList.remove('opacity-40', 'cursor-not-allowed');
+                }
+
+                // Restore chart appearance
+                chartContainer.classList.remove('grayscale', 'opacity-50', 'pointer-events-none');
+            }
+
             updateParams();
         }
 
         function stepForward() {
+            if (isSSLocked) return;
             if (isRunning) togglePlay();
             const step = tMax / 40;
             currentTime = Math.min(tMax, currentTime + step);
@@ -831,6 +878,7 @@
         }
 
         function simStep() {
+            if (isSSLocked) return;
             const dt = tMax / 150;
             currentTime += dt;
             if (currentTime >= tMax) {
