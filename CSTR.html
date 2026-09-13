@@ -437,9 +437,9 @@
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-2">
                     <div>
                         <h3 class="font-bold text-ttu-purple text-sm flex items-center gap-2">
-                            <i class="fa-solid fa-chart-line text-ttu-gold"></i> Dynamic Concentration Response $C_i(t)$
+                            <i class="fa-solid fa-chart-line text-ttu-gold"></i> Dynamic Concentration Response $C_j(t)$
                         </h3>
-                        <p class="text-xs text-slate-500">Transient buildup towards steady state: $\frac{dC_i}{dt} = \frac{C_{i,in} - C_i}{\tau} + R_i$. Dashed horizontal lines represent steady-state asymptotes.</p>
+                        <p class="text-xs text-slate-500">Transient buildup towards steady state: $\frac{dC_j}{dt} = \frac{C_{j,\text{in}} - C_j}{\tau} + R_j$. Dashed horizontal lines represent steady-state asymptotes.</p>
                     </div>
                 </div>
 
@@ -547,23 +547,23 @@
             if (rxnType === '1_irrev') {
                 orderBadge.textContent = "1st Order Irreversible";
                 headerTitle.innerHTML = "Reaction Scheme: <strong>A &rarr; B (1st Order)</strong>";
-                formulaBox.innerHTML = "$$\\frac{dC_A}{dt} = \\frac{C_{Af} - C_A}{\\tau} - k_1 C_A, \\quad C_{A,ss} = \\frac{C_{Af}}{1 + k_1 \\tau}$$";
+                formulaBox.innerHTML = "$$\\frac{dC_A}{dt} = \\frac{C_{Af} - C_A}{\\tau} - k_1 C_A, \\quad \\frac{dC_B}{dt} = -\\frac{C_B}{\\tau} + k_1 C_A$$ $$\\quad C_{A,ss} = \\frac{C_{Af}}{1 + k_1 \\tau}, \\quad C_{B,ss} = \\frac{k_1 \\tau C_{Af}}{1 + k_1 \\tau}$$";
             } else if (rxnType === '1_rev') {
                 rxn2Section.classList.remove('hidden');
                 document.getElementById('rxn1Label').textContent = "Forward Step (k₁)";
                 document.getElementById('rxn2Label').textContent = "Reverse Step (k₂)";
                 orderBadge.textContent = "1st Order Reversible";
                 headerTitle.innerHTML = "Reaction Scheme: <strong>A &rightleftharpoons; B</strong>";
-                formulaBox.innerHTML = "$$\\frac{dC_A}{dt} = \\frac{C_{Af} - C_A}{\\tau} - k_1 C_A + k_2 C_B, \\quad C_{A,ss} = C_{Af} \\frac{1 + k_2 \\tau}{1 + (k_1 + k_2)\\tau}$$";
+                formulaBox.innerHTML = "$$\\frac{dC_A}{dt} = \\frac{C_{Af} - C_A}{\\tau} - k_1 C_A + k_2 C_B, \\quad \\frac{dC_B}{dt} = -\\frac{C_B}{\\tau} + k_1 C_A - k_2 C_B$$ $$\\quad C_{A,ss} = C_{Af} \\frac{1 + k_2 \\tau}{1 + (k_1 + k_2)\\tau}, \\quad C_{B,ss} = \\frac{k_1 \\tau C_{Af}}{1 + (k_1 + k_2)\\tau}$$";
             } else if (rxnType === '2_irrev') {
                 orderBadge.textContent = "2nd Order Irreversible";
                 headerTitle.innerHTML = "Reaction Scheme: <strong>A &rarr; B (2nd Order)</strong>";
-                formulaBox.innerHTML = "$$\\frac{dC_A}{dt} = \\frac{C_{Af} - C_A}{\\tau} - k_1 C_A^2, \\quad k_1 \\tau C_{A,ss}^2 + C_{A,ss} - C_{Af} = 0$$";
+                formulaBox.innerHTML = "$$\\frac{dC_A}{dt} = \\frac{C_{Af} - C_A}{\\tau} - k_1 C_A^2, \\quad \\frac{dC_B}{dt} = -\\frac{C_B}{\\tau} + k_1 C_A^2$$ $$\\quad k_1 \\tau C_{A,ss}^2 + C_{A,ss} - C_{Af} = 0, \\quad C_{B,ss} = C_{Af} - C_{A,ss}$$";
             } else if (rxnType === 'n_order') {
                 nOrderContainer.classList.remove('hidden');
                 orderBadge.textContent = "n-th Order Irreversible";
                 headerTitle.innerHTML = "Reaction Scheme: <strong>A &rarr; B (n-th Order)</strong>";
-                formulaBox.innerHTML = "$$\\frac{dC_A}{dt} = \\frac{C_{Af} - C_A}{\\tau} - k_1 C_A^n$$";
+                formulaBox.innerHTML = "$$\\frac{dC_A}{dt} = \\frac{C_{Af} - C_A}{\\tau} - k_1 C_A^n, \\quad \\frac{dC_B}{dt} = -\\frac{C_B}{\\tau} + k_1 C_A^n$$ $$\\quad k_1 \\tau C_{A,ss}^n + C_{A,ss} - C_{Af} = 0, \\quad C_{B,ss} = C_{Af} - C_{A,ss}$$";
             } else if (rxnType === 'series') {
                 rxn2Section.classList.remove('hidden');
                 kpiRowCC.classList.remove('hidden');
@@ -572,7 +572,7 @@
                 document.getElementById('rxn2Label').textContent = "Step 2: B → C (k₂)";
                 orderBadge.textContent = "Series Reactions (A → B → C)";
                 headerTitle.innerHTML = "Reaction Scheme: <strong>A &rarr; B &rarr; C</strong>";
-                formulaBox.innerHTML = "$$\\frac{dC_B}{dt} = -\\frac{C_B}{\\tau} + k_1 C_A - k_2 C_B, \\quad C_{B,ss} = \\frac{k_1 \\tau C_{Af}}{(1 + k_1 \\tau)(1 + k_2 \\tau)}$$";
+                formulaBox.innerHTML = "$$\\frac{dC_A}{dt} = \\frac{C_{Af} - C_A}{\\tau} - k_1 C_A, \\quad \\frac{dC_B}{dt} = -\\frac{C_B}{\\tau} + k_1 C_A - k_2 C_B, \\quad \\frac{dC_C}{dt} = -\\frac{C_C}{\\tau} + k_2 C_B$$ $$\\quad C_{A,ss} = \\frac{C_{Af}}{1 + k_1 \\tau}, \\quad C_{B,ss} = \\frac{k_1 \\tau C_{Af}}{(1 + k_1 \\tau)(1 + k_2 \\tau)}, \\quad C_{C,ss} = C_{Af} - C_{A,ss} - C_{B,ss}$$";
             } else if (rxnType === 'parallel') {
                 rxn2Section.classList.remove('hidden');
                 kpiRowCC.classList.remove('hidden');
@@ -581,7 +581,7 @@
                 document.getElementById('rxn2Label').textContent = "Branch 2: A → C (k₂)";
                 orderBadge.textContent = "Parallel Reactions (A → B, A → C)";
                 headerTitle.innerHTML = "Reaction Scheme: <strong>A &rarr; B , A &rarr; C</strong>";
-                formulaBox.innerHTML = "$$\\frac{dC_A}{dt} = \\frac{C_{Af} - C_A}{\\tau} - (k_1 + k_2) C_A, \\quad C_{A,ss} = \\frac{C_{Af}}{1 + (k_1 + k_2)\\tau}$$";
+                formulaBox.innerHTML = "$$\\frac{dC_A}{dt} = \\frac{C_{Af} - C_A}{\\tau} - (k_1 + k_2) C_A, \\quad \\frac{dC_B}{dt} = -\\frac{C_B}{\\tau} + k_1 C_A, \\quad \\frac{dC_C}{dt} = -\\frac{C_C}{\\tau} + k_2 C_A$$ $$\\quad C_{A,ss} = \\frac{C_{Af}}{1 + (k_1 + k_2)\\tau}, \\quad C_{B,ss} = \\frac{k_1 \\tau C_{Af}}{1 + (k_1 + k_2)\\tau}, \\quad C_{C,ss} = \\frac{k_2 \\tau C_{Af}}{1 + (k_1 + k_2)\\tau}$$";
             }
 
             // Re-render MathJax expressions in formula Box
