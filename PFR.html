@@ -69,7 +69,7 @@
                     <h1 class="font-bold text-lg leading-tight tracking-wide flex items-center gap-2">
                         PFR Kinetics Simulator
                         <span class="text-[10px] bg-amber-500/30 text-amber-200 border border-amber-400/40 px-2 py-0.5 rounded-full font-mono font-normal">
-                            System: $A \rightarrow 2B$ & Complex Schemes
+                            System: Molar Flow Rate $N_j$ (Rawlings & Ekerdt)
                         </span>
                     </h1>
                     <p class="text-xs text-ttu-goldLight opacity-90">Department of Chemical & Biomolecular Engineering • Plug Flow Reactor Design</p>
@@ -127,7 +127,7 @@
                 <!-- Formula & Design Equation Box -->
                 <div class="bg-purple-50 p-3 rounded-lg border border-purple-200 text-xs">
                     <div class="text-ttu-purple font-bold mb-1 flex items-center justify-between">
-                        <span>PFR Design Equations (Rawlings & Ekerdt Notation)</span>
+                        <span>PFR Design Equations (Rawlings & Ekerdt)</span>
                         <span id="vFormulaBadge" class="text-[10px] bg-purple-200 text-ttu-purple px-1.5 py-0.5 rounded font-mono font-semibold">
                             $v = v_0$
                         </span>
@@ -183,7 +183,7 @@
                         <span><i class="fa-solid fa-atom text-blue-600 mr-1"></i> Reaction Kinetics & Rate Constants</span>
                     </div>
 
-                    <!-- Order Control (Visible for n-th order, Series, Parallel) -->
+                    <!-- Order Control (Visible for n-th order) -->
                     <div id="nOrderContainer" class="hidden">
                         <div class="flex justify-between items-center mb-1 text-xs">
                             <label for="nOrderInput" class="text-slate-700 font-medium">Reaction Order ($n$)</label>
@@ -194,7 +194,7 @@
                                oninput="updateParams()">
                     </div>
 
-                    <!-- Primary Rate Constant k1 / Temperature Controls -->
+                    <!-- Temperature Control -->
                     <div>
                         <div class="flex justify-between items-center mb-1 text-xs">
                             <label for="tempInput" class="text-slate-700 font-medium flex items-center gap-1">
@@ -240,7 +240,7 @@
                                oninput="updateParams()">
                     </div>
 
-                    <!-- Secondary Reaction Rate Constant Controls (For Series / Parallel) -->
+                    <!-- Secondary Reaction Controls (For Series / Parallel) -->
                     <div id="secondaryRxnContainer" class="hidden p-2.5 bg-amber-100/50 rounded-lg border border-amber-200 space-y-2 mt-2">
                         <div class="font-bold text-amber-900 text-xs flex justify-between">
                             <span id="secondaryRxnLabel">Secondary Reaction (B → 3C)</span>
@@ -389,39 +389,39 @@
                             </span>
                         </div>
 
-                        <!-- Concentration CA(V) -->
+                        <!-- Molar Flow Rate NA(V) -->
                         <div class="flex justify-between items-center bg-purple-50 p-2 rounded-lg border border-purple-100">
                             <div>
-                                <span class="text-ttu-purple font-semibold block">$C_A(V)$ [Reactant A]</span>
+                                <span class="text-ttu-purple font-semibold block">$N_A(V)$ [Molar Flow A]</span>
                             </div>
                             <span class="font-mono font-bold text-ttu-purple text-sm">
-                                <span id="kpiProbeCA">0.593</span> mol/L
+                                <span id="kpiProbeNA">9.13</span> mol/s
                             </span>
                         </div>
 
-                        <!-- Concentration CB(V) -->
+                        <!-- Molar Flow Rate NB(V) -->
                         <div class="flex justify-between items-center bg-amber-50/60 p-2 rounded-lg border border-amber-100">
                             <div>
-                                <span class="text-amber-800 font-semibold block">$C_B(V)$ [Product B]</span>
+                                <span class="text-amber-800 font-semibold block">$N_B(V)$ [Molar Flow B]</span>
                             </div>
                             <span class="font-mono font-bold text-amber-700 text-sm">
-                                <span id="kpiProbeCB">1.407</span> mol/L
+                                <span id="kpiProbeNB">21.7</span> mol/s
                             </span>
                         </div>
 
-                        <!-- Concentration CC(V) (For Series/Parallel) -->
-                        <div id="kpiCcContainer" class="hidden flex justify-between items-center bg-teal-50 p-2 rounded-lg border border-teal-100">
+                        <!-- Molar Flow Rate NC(V) (For Series/Parallel) -->
+                        <div id="kpiNcContainer" class="hidden flex justify-between items-center bg-teal-50 p-2 rounded-lg border border-teal-100">
                             <div>
-                                <span class="text-teal-800 font-semibold block">$C_C(V)$ [Product C]</span>
+                                <span class="text-teal-800 font-semibold block">$N_C(V)$ [Molar Flow C]</span>
                             </div>
                             <span class="font-mono font-bold text-teal-700 text-sm">
-                                <span id="kpiProbeCC">0.000</span> mol/L
+                                <span id="kpiProbeNC">0.00</span> mol/s
                             </span>
                         </div>
 
                         <!-- Cumulative Space Time tau -->
                         <div class="flex justify-between items-center bg-slate-50 p-1.5 rounded-lg border border-slate-100">
-                            <span class="text-slate-500 font-medium">Cumulative Space Time ($\tau$)</span>
+                            <span class="text-slate-500 font-medium">Space Time ($\tau$)</span>
                             <span class="font-mono font-bold text-slate-700 text-xs">
                                 <span id="kpiProbeTau">20.1</span> s
                             </span>
@@ -443,31 +443,34 @@
                     </div>
 
                     <!-- Chart Display Switcher -->
-                <div class="flex flex-wrap bg-slate-100 p-1 rounded-lg border border-slate-200 text-xs gap-1">
-                    <button id="btnViewConc" onclick="setPlotMode('conc')" class="px-2.5 py-1 rounded-md font-bold bg-white text-ttu-purple shadow-sm">
-                        Concentrations $C_j$
-                    </button>
-                    <button id="btnViewConv" onclick="setPlotMode('conv')" class="px-2.5 py-1 rounded-md font-medium text-slate-600 hover:text-slate-900">
-                        Conversion $X_A$
-                    </button>
-                    <button id="btnViewFlow" onclick="setPlotMode('flow')" class="px-2.5 py-1 rounded-md font-medium text-slate-600 hover:text-slate-900">
-                        Volumetric Flow Rate $v(V)$
-                    </button>
-                    <button id="btnViewSelect" onclick="setPlotMode('selectivity')" class="hidden px-2.5 py-1 rounded-md font-medium text-slate-600 hover:text-slate-900">
-                        Yield & Selectivity
-                    </button>
+                    <div class="flex flex-wrap bg-slate-100 p-1 rounded-lg border border-slate-200 text-xs gap-1">
+                        <button id="btnViewConc" onclick="setPlotMode('conc')" class="px-2.5 py-1 rounded-md font-bold bg-white text-ttu-purple shadow-sm">
+                            Concentrations $C_j$
+                        </button>
+                        <button id="btnViewFlowRate" onclick="setPlotMode('molar')" class="px-2.5 py-1 rounded-md font-medium text-slate-600 hover:text-slate-900">
+                            Molar Flow $N_j$
+                        </button>
+                        <button id="btnViewConv" onclick="setPlotMode('conv')" class="px-2.5 py-1 rounded-md font-medium text-slate-600 hover:text-slate-900">
+                            Conversion $X_A$
+                        </button>
+                        <button id="btnViewFlow" onclick="setPlotMode('flow')" class="px-2.5 py-1 rounded-md font-medium text-slate-600 hover:text-slate-900">
+                            Volumetric Flow $v(V)$
+                        </button>
+                        <button id="btnViewSelect" onclick="setPlotMode('selectivity')" class="hidden px-2.5 py-1 rounded-md font-medium text-slate-600 hover:text-slate-900">
+                            Yield & Selectivity
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Plot Area -->
+                <div id="chartContainer" class="relative flex-1 min-h-[260px] w-full">
+                    <canvas id="pfrChart"></canvas>
                 </div>
             </div>
 
-            <!-- Plot Area -->
-            <div id="chartContainer" class="relative flex-1 min-h-[260px] w-full">
-                <canvas id="pfrChart"></canvas>
-            </div>
-        </div>
+        </section>
 
-    </section>
-
-</main>
+    </main>
 
 <script>
     // Universal Constants
@@ -489,7 +492,7 @@
     let vTotal = 500.0;     // Total reactor volume L
     let vProbe = 250.0;     // Spatial probe position L
 
-    let plotMode = 'conc';  // 'conc', 'conv', 'flow', 'selectivity'
+    let plotMode = 'conc';  // 'conc', 'molar', 'conv', 'flow', 'selectivity'
 
     // Particle System
     let particles = [];
@@ -510,6 +513,13 @@
         initParticles();
         initChart();
         onReactionTypeChange();
+
+        // Responsive canvas resize handler
+        window.addEventListener('resize', () => {
+            if (pfrCanvas && pfrCanvas.parentElement) {
+                pfrCanvas.width = pfrCanvas.parentElement.clientWidth || 340;
+            }
+        });
 
         requestAnimationFrame(animationLoop);
     });
@@ -535,6 +545,30 @@
         return A02 * Math.exp(-(ea2Kj * 1000) / (R * tempK));
     }
 
+    function setPlotMode(mode) {
+        plotMode = mode;
+        const btns = ['btnViewConc', 'btnViewFlowRate', 'btnViewConv', 'btnViewFlow', 'btnViewSelect'];
+        btns.forEach(bId => {
+            const btn = document.getElementById(bId);
+            if (btn) {
+                btn.className = "px-2.5 py-1 rounded-md font-medium text-slate-600 hover:text-slate-900";
+            }
+        });
+
+        let activeBtnId = 'btnViewConc';
+        if (mode === 'molar') activeBtnId = 'btnViewFlowRate';
+        if (mode === 'conv') activeBtnId = 'btnViewConv';
+        if (mode === 'flow') activeBtnId = 'btnViewFlow';
+        if (mode === 'selectivity') activeBtnId = 'btnViewSelect';
+
+        const activeBtn = document.getElementById(activeBtnId);
+        if (activeBtn) {
+            activeBtn.className = "px-2.5 py-1 rounded-md font-bold bg-white text-ttu-purple shadow-sm";
+        }
+
+        updateChartData();
+    }
+
     function onReactionTypeChange() {
         rxnType = document.getElementById('rxnTypeSelect').value;
 
@@ -543,7 +577,7 @@
         const secondaryRxnContainer = document.getElementById('secondaryRxnContainer');
         const secondaryRxnLabel = document.getElementById('secondaryRxnLabel');
         const legendSpeciesC = document.getElementById('legendSpeciesC');
-        const kpiCcContainer = document.getElementById('kpiCcContainer');
+        const kpiNcContainer = document.getElementById('kpiNcContainer');
         const btnViewSelect = document.getElementById('btnViewSelect');
         const headerTitle = document.getElementById('headerReactionTitle');
 
@@ -551,7 +585,7 @@
         reversibleContainer.classList.add('hidden');
         secondaryRxnContainer.classList.add('hidden');
         legendSpeciesC.classList.add('hidden');
-        kpiCcContainer.classList.add('hidden');
+        kpiNcContainer.classList.add('hidden');
         btnViewSelect.classList.add('hidden');
 
         if (rxnType === '1st_order') {
@@ -569,14 +603,14 @@
             secondaryRxnContainer.classList.remove('hidden');
             secondaryRxnLabel.textContent = "Secondary Reaction (B → 3C)";
             legendSpeciesC.classList.remove('hidden');
-            kpiCcContainer.classList.remove('hidden');
+            kpiNcContainer.classList.remove('hidden');
             btnViewSelect.classList.remove('hidden');
         } else if (rxnType === 'parallel') {
             headerTitle.innerHTML = "Reaction: <strong>Parallel ($A \\rightarrow 2B$ & $A \\rightarrow 3C$)</strong>";
             secondaryRxnContainer.classList.remove('hidden');
             secondaryRxnLabel.textContent = "Parallel Reaction (A → 3C)";
             legendSpeciesC.classList.remove('hidden');
-            kpiCcContainer.classList.remove('hidden');
+            kpiNcContainer.classList.remove('hidden');
             btnViewSelect.classList.remove('hidden');
         }
 
@@ -768,7 +802,7 @@
             if (rxnType === '1st_order') {
                 formulaBox.innerHTML = "$$\\frac{dN_A}{dV} = -k_1 C_A, \\quad C_A = \\frac{N_A}{v_0}, \\quad v(V) = v_0$$";
             } else if (rxnType === '1st_reversible') {
-                formulaBox.innerHTML = "$$-r_A = k_1 \\left(C_A - \\frac{C_B^2}{K_c}\\right), \\quad C_j = \\frac{N_j}{v_0}, \\quad v(V) = v_0$$";
+                formulaBox.innerHTML = "$$\\frac{dN_A}{dV} = -k_1 \\left(C_A - \\frac{C_B^2}{K_c}\\right), \\quad C_j = \\frac{N_j}{v_0}$$";
             } else if (rxnType === '2nd_order') {
                 formulaBox.innerHTML = "$$\\frac{dN_A}{dV} = -k_1 C_A^2, \\quad C_A = \\frac{N_A}{v_0}, \\quad v(V) = v_0$$";
             } else if (rxnType === 'nth_order') {
@@ -787,15 +821,15 @@
             if (rxnType === '1st_order') {
                 formulaBox.innerHTML = "$$\\frac{dN_A}{dV} = -k_1 C_A, \\quad C_A = \\frac{N_A}{v(V)}, \\quad v(V) = v_0 \\frac{N_T(V)}{N_{T0}}$$";
             } else if (rxnType === '1st_reversible') {
-                formulaBox.innerHTML = "$$-r_A = k_1 \\left(C_A - \\frac{C_B^2}{K_c}\\right), \\quad C_j = \\frac{N_j}{v(V)}, \\quad v(V) = v_0 \\frac{N_T(V)}{N_{T0}}$$";
+                formulaBox.innerHTML = "$$\\frac{dN_A}{dV} = -k_1 \\left(C_A - \\frac{C_B^2}{K_c}\\right), \\quad v(V) = v_0 \\frac{N_T(V)}{N_{T0}}$$";
             } else if (rxnType === '2nd_order') {
                 formulaBox.innerHTML = "$$\\frac{dN_A}{dV} = -k_1 C_A^2, \\quad C_A = \\frac{N_A}{v(V)}, \\quad v(V) = v_0 \\frac{N_T(V)}{N_{T0}}$$";
             } else if (rxnType === 'nth_order') {
                 formulaBox.innerHTML = "$$\\frac{dN_A}{dV} = -k_1 C_A^n, \\quad C_A = \\frac{N_A}{v(V)}, \\quad v(V) = v_0 \\frac{N_T(V)}{N_{T0}}$$";
             } else if (rxnType === 'series') {
-                formulaBox.innerHTML = "$$\\frac{dN_A}{dV} = -k_1 C_A, \\quad \\frac{dN_B}{dV} = 2 k_1 C_A - k_2 C_B, \\quad v(V) = v_0 \\frac{N_T(V)}{N_{T0}}$$";
+                formulaBox.innerHTML = "$$\\frac{dN_A}{dV} = -k_1 C_A, \\quad \\frac{dN_B}{dV} = 2 k_1 C_A - k_2 C_B, \\quad v(V) = v_0 \\frac{N_T}{N_{T0}}$$";
             } else if (rxnType === 'parallel') {
-                formulaBox.innerHTML = "$$\\frac{dN_A}{dV} = -k_1 C_A - k_2 C_A, \\quad \\frac{dN_B}{dV} = 2 k_1 C_A, \\quad v(V) = v_0 \\frac{N_T(V)}{N_{T0}}$$";
+                formulaBox.innerHTML = "$$\\frac{dN_A}{dV} = -k_1 C_A - k_2 C_A, \\quad \\frac{dN_B}{dV} = 2 k_1 C_A, \\quad v(V) = v_0 \\frac{N_T}{N_{T0}}$$";
             }
         }
 
@@ -837,9 +871,9 @@
         document.getElementById('exitXA').textContent = (exitRes.XA * 100).toFixed(1);
         document.getElementById('inletV0').textContent = v0.toFixed(1);
         document.getElementById('kpiProbeVflow').textContent = probeRes.vFlow.toFixed(1);
-        document.getElementById('kpiProbeCA').textContent = probeRes.CA.toFixed(3);
-        document.getElementById('kpiProbeCB').textContent = probeRes.CB.toFixed(3);
-        document.getElementById('kpiProbeCC').textContent = probeRes.CC.toFixed(3);
+        document.getElementById('kpiProbeNA').textContent = probeRes.NA.toFixed(2);
+        document.getElementById('kpiProbeNB').textContent = probeRes.NB.toFixed(2);
+        document.getElementById('kpiProbeNC').textContent = probeRes.NC.toFixed(2);
         document.getElementById('kpiProbeTau').textContent = probeRes.tau.toFixed(1);
     }
 
@@ -849,6 +883,58 @@
         updateChartData();
     }
 
+    function initChart() {
+        const ctxChart = document.getElementById('pfrChart').getContext('2d');
+        pfrChart = new Chart(ctxChart, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: []
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: false,
+                interaction: {
+                    mode: 'index',
+                    intersect: false,
+                },
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: {
+                            usePointStyle: true,
+                            font: { family: 'sans-serif', size: 11 }
+                        }
+                    },
+                    tooltip: {
+                        padding: 8,
+                        cornerRadius: 6
+                    }
+                },
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Reactor Volume V (L)',
+                            font: { weight: 'bold', size: 11 }
+                        },
+                        grid: { color: 'rgba(0,0,0,0.05)' }
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'Concentration (mol/L)',
+                            font: { weight: 'bold', size: 11 }
+                        },
+                        beginAtZero: true,
+                        grid: { color: 'rgba(0,0,0,0.05)' }
+                    }
+                }
+            }
+        });
+    }
+
     function updateChartData() {
         if (!pfrChart || !simResults || simResults.length === 0) return;
 
@@ -856,14 +942,14 @@
         const datasets = [];
 
         if (plotMode === 'conc') {
-            pfrChart.options.scales.y.title.text = 'Concentration (mol/L)';
+            pfrChart.options.scales.y.title.text = 'Concentration C_j (mol/L)';
 
             datasets.push({
                 label: 'C_A(V) [Reactant A]',
                 data: simResults.map(pt => pt.CA),
                 borderColor: '#4F2984',
                 backgroundColor: 'rgba(79, 41, 132, 0.08)',
-                borderWidth: 3,
+                borderWidth: 2.5,
                 fill: true,
                 pointRadius: 0
             });
@@ -873,7 +959,7 @@
                 data: simResults.map(pt => pt.CB),
                 borderColor: '#FFC72C',
                 backgroundColor: 'rgba(255, 199, 44, 0.12)',
-                borderWidth: 3,
+                borderWidth: 2.5,
                 fill: true,
                 pointRadius: 0
             });
@@ -884,7 +970,41 @@
                     data: simResults.map(pt => pt.CC),
                     borderColor: '#14B8A6',
                     backgroundColor: 'rgba(20, 184, 166, 0.1)',
-                    borderWidth: 3,
+                    borderWidth: 2.5,
+                    fill: true,
+                    pointRadius: 0
+                });
+            }
+        } else if (plotMode === 'molar') {
+            pfrChart.options.scales.y.title.text = 'Molar Flow Rate N_j (mol/s)';
+
+            datasets.push({
+                label: 'N_A(V) [Reactant A]',
+                data: simResults.map(pt => pt.NA),
+                borderColor: '#4F2984',
+                backgroundColor: 'rgba(79, 41, 132, 0.08)',
+                borderWidth: 2.5,
+                fill: true,
+                pointRadius: 0
+            });
+
+            datasets.push({
+                label: 'N_B(V) [Product B]',
+                data: simResults.map(pt => pt.NB),
+                borderColor: '#D97706',
+                backgroundColor: 'rgba(217, 119, 6, 0.12)',
+                borderWidth: 2.5,
+                fill: true,
+                pointRadius: 0
+            });
+
+            if (rxnType === 'series' || rxnType === 'parallel') {
+                datasets.push({
+                    label: 'N_C(V) [Product C]',
+                    data: simResults.map(pt => pt.NC),
+                    borderColor: '#14B8A6',
+                    backgroundColor: 'rgba(20, 184, 166, 0.1)',
+                    borderWidth: 2.5,
                     fill: true,
                     pointRadius: 0
                 });
@@ -897,7 +1017,7 @@
                 data: simResults.map(pt => pt.XA),
                 borderColor: '#059669',
                 backgroundColor: 'rgba(5, 150, 105, 0.12)',
-                borderWidth: 3,
+                borderWidth: 2.5,
                 fill: true,
                 pointRadius: 0
             });
@@ -909,7 +1029,7 @@
                 data: simResults.map(pt => pt.vFlow),
                 borderColor: '#D97706',
                 backgroundColor: 'rgba(217, 119, 6, 0.15)',
-                borderWidth: 3,
+                borderWidth: 2.5,
                 fill: true,
                 pointRadius: 0
             });
@@ -937,12 +1057,51 @@
 
         pfrChart.data.labels = labels;
         pfrChart.data.datasets = datasets;
-        pfrChart.update('none');
+        pfrChart.update();
+    }
+
+    function resetDefaults() {
+        document.getElementById('phaseSelect').value = 'liquid';
+        document.getElementById('rxnTypeSelect').value = '1st_order';
+        document.getElementById('ya0Input').value = 1.0;
+        document.getElementById('ca0Input').value = 2.0;
+        document.getElementById('v0Input').value = 10.0;
+        document.getElementById('nOrderInput').value = 1.5;
+        document.getElementById('tempInput').value = 350;
+        document.getElementById('eaInput').value = 40;
+        document.getElementById('freqInput').value = 5.5;
+        document.getElementById('kcInput').value = 1.5;
+        document.getElementById('ea2Input').value = 45;
+        document.getElementById('freq2Input').value = 5.2;
+        document.getElementById('vTotalInput').value = 500;
+        document.getElementById('probeInput').value = 250;
+        vProbe = 250;
+        setPlotMode('conc');
+        onReactionTypeChange();
     }
 
     function animationLoop() {
         renderPfrGraphic();
         requestAnimationFrame(animationLoop);
+    }
+
+    function drawArrow(ctx, fromx, fromy, tox, toy, color) {
+        const headlen = 7;
+        const angle = Math.atan2(toy - fromy, tox - fromx);
+        ctx.strokeStyle = color;
+        ctx.fillStyle = color;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(fromx, fromy);
+        ctx.lineTo(tox, toy);
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(tox, toy);
+        ctx.lineTo(tox - headlen * Math.cos(angle - Math.PI / 6), toy - headlen * Math.sin(angle - Math.PI / 6));
+        ctx.lineTo(tox - headlen * Math.cos(angle + Math.PI / 6), toy - headlen * Math.sin(angle + Math.PI / 6));
+        ctx.closePath();
+        ctx.fill();
     }
 
     function renderPfrGraphic() {
