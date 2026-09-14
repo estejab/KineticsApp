@@ -69,15 +69,15 @@
                     <h1 class="font-bold text-lg leading-tight tracking-wide flex items-center gap-2">
                         Gas-Phase Variable-Volume PFR Simulator
                         <span class="text-[10px] bg-amber-500/30 text-amber-200 border border-amber-400/40 px-2 py-0.5 rounded-full font-mono font-normal">
-                            Steady-State ($v = v_0(1 + \epsilon_A X_A)$)
+                            System: $A \rightarrow 2B$ & Complex Schemes
                         </span>
                     </h1>
-                    <p class="text-xs text-ttu-goldLight opacity-90">Department of Chemical & Biomolecular Engineering • Plug Flow Reactor</p>
+                    <p class="text-xs text-ttu-goldLight opacity-90">Department of Chemical & Biomolecular Engineering • Plug Flow Reactor Design</p>
                 </div>
             </div>
             <div class="flex items-center space-x-2 text-xs bg-ttu-purpleDark/60 px-3 py-1.5 rounded-full border border-ttu-gold/40">
                 <i class="fa-solid fa-wind text-ttu-gold animate-pulse"></i>
-                <span id="headerReactionTitle">Reaction: <strong>A &rarr; 2 B (Expansion $\epsilon_A > 0$)</strong></span>
+                <span id="headerReactionTitle">Reaction: <strong>1st-Order Irreversible ($A \rightarrow 2B$)</strong></span>
             </div>
         </div>
     </header>
@@ -89,55 +89,40 @@
         <section class="lg:col-span-5 bg-white rounded-xl shadow-md border border-slate-200 flex flex-col overflow-hidden">
             <div class="bg-slate-50 border-b border-slate-200 px-4 py-3 flex items-center justify-between">
                 <h2 class="font-bold text-ttu-purple flex items-center gap-2">
-                    <i class="fa-solid fa-sliders"></i> Operating Parameters & Kinetics
+                    <i class="fa-solid fa-sliders"></i> Reaction Kinetic Scheme & Parameters
                 </h2>
                 <span id="expansionBadge" class="bg-amber-100 text-amber-900 text-xs font-semibold px-2.5 py-0.5 rounded-full border border-amber-300">
-                    $\epsilon_A = +1.00$ (Expanding Gas)
+                    $\epsilon_A = +1.00$
                 </span>
             </div>
 
             <div class="p-4 flex-1 overflow-y-auto space-y-4 text-sm">
                 
-                <!-- Reaction System Selector -->
+                <!-- Reaction Kinetic Type Selector -->
                 <div>
                     <label for="rxnTypeSelect" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                        Select Gas-Phase Reaction Stoichiometry
+                        Select Reaction Kinetic Scheme
                     </label>
                     <select id="rxnTypeSelect" onchange="onReactionTypeChange()" class="w-full bg-slate-50 border border-slate-300 font-semibold text-ttu-purple rounded-lg p-2 focus:ring-2 focus:ring-ttu-purple focus:outline-none">
-                        <option value="A_to_2B">1. A → 2 B (Mole Increase, ε_A > 0)</option>
-                        <option value="A_to_3B">2. A → 3 B (High Expansion, ε_A = 2 y_A0)</option>
-                        <option value="2A_to_B">3. 2 A → B (Mole Decrease, ε_A < 0)</option>
-                        <option value="A_to_B">4. A → B (Constant Volume Gas, ε_A = 0)</option>
-                        <option value="A_to_B_plus_C">5. A → B + C (Bimolecular Product, ε_A > 0)</option>
-                        <option value="custom_delta">6. Custom Stoichiometric Coefficient (A → b B)</option>
+                        <option value="1st_order">1. A → 2B (1st Order Irreversible)</option>
+                        <option value="1st_reversible">2. A ⇌ 2B (1st Order Reversible)</option>
+                        <option value="2nd_order">3. A → 2B (2nd Order)</option>
+                        <option value="nth_order">4. A → 2B (n-th Order)</option>
+                        <option value="series">5. A → 2B and B → 3C (Series Reactions)</option>
+                        <option value="parallel">6. A → 2B and A → 3C (Parallel Reactions)</option>
                     </select>
                 </div>
 
-                <!-- Custom Stoichiometric Coefficient Input (Hidden by default) -->
-                <div id="customStoichContainer" class="hidden p-3 bg-amber-50 border border-amber-200 rounded-lg">
-                    <div class="flex justify-between items-center mb-1">
-                        <label for="stoichBInput" class="font-semibold text-amber-900 text-xs">
-                            Product Moles per Mole Reactant ($b$ in $A \rightarrow b B$)
-                        </label>
-                        <span class="font-mono font-bold text-amber-800 text-xs bg-amber-100 px-2 py-0.5 rounded">
-                            b = <span id="stoichBValue">2.00</span>
-                        </span>
-                    </div>
-                    <input type="range" id="stoichBInput" min="0.1" max="5.0" value="2.0" step="0.1" 
-                           class="w-full h-2 bg-amber-200 rounded-lg appearance-none cursor-pointer accent-amber-600"
-                           oninput="updateParams()">
-                </div>
-
-                <!-- Formula Box -->
+                <!-- Formula & Design Equation Box -->
                 <div class="bg-purple-50 p-3 rounded-lg border border-purple-200 text-xs">
                     <div class="text-ttu-purple font-bold mb-1 flex items-center justify-between">
                         <span>PFR Gas-Phase Design Equation</span>
                         <span class="text-[10px] bg-purple-200 text-ttu-purple px-1.5 py-0.5 rounded font-mono font-semibold">
-                            $\epsilon_A = y_{A0} \delta$
+                            $v(V) = v_0 \frac{F_T(V)}{F_{T0}}$
                         </span>
                     </div>
-                    <div id="formulaBox" class="font-mono text-slate-800 text-center py-1.5 bg-white rounded border border-purple-100 shadow-inner overflow-x-auto">
-                        $$\frac{dX_A}{dV} = \frac{-r_A}{F_{A0}}, \quad C_A(V) = C_{A0} \frac{1 - X_A}{1 + \epsilon_A X_A}, \quad v(V) = v_0 (1 + \epsilon_A X_A)$$
+                    <div id="formulaBox" class="font-mono text-slate-800 text-center py-2 bg-white rounded border border-purple-100 shadow-inner overflow-x-auto min-h-[50px] flex items-center justify-center px-2">
+                        $$\frac{dF_A}{dV} = r_A, \quad C_A = \frac{F_A}{v(V)}, \quad v(V) = v_0 (1 + \epsilon_A X_A)$$
                     </div>
                 </div>
 
@@ -154,7 +139,7 @@
                     <div>
                         <div class="flex justify-between items-center mb-1 text-xs">
                             <label for="ya0Input" class="text-slate-700 font-medium">Inlet Reactant Mole Fraction ($y_{A0}$)</label>
-                            <span class="font-mono text-slate-800 font-bold"><span id="ya0Value">1.00</span> (Pure Feed = 1.0)</span>
+                            <span class="font-mono text-slate-800 font-bold"><span id="ya0Value">1.00</span></span>
                         </div>
                         <input type="range" id="ya0Input" min="0.1" max="1.0" value="1.0" step="0.05" 
                                class="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-amber-600"
@@ -184,40 +169,40 @@
                     </div>
                 </div>
 
-                <!-- Reaction Order & Temperature Controls -->
+                <!-- Dynamic Kinetic Parameters Card -->
                 <div class="p-3 bg-blue-50/60 border border-blue-200 rounded-lg space-y-3">
-                    <div class="font-bold text-blue-900 text-xs uppercase tracking-wide">
-                        <i class="fa-solid fa-atom text-blue-600 mr-1"></i> Reaction Kinetics & Temperature
+                    <div class="font-bold text-blue-900 text-xs uppercase tracking-wide flex justify-between items-center">
+                        <span><i class="fa-solid fa-atom text-blue-600 mr-1"></i> Reaction Kinetics & Rate Constants</span>
                     </div>
 
-                    <!-- Reaction Order n -->
-                    <div>
+                    <!-- Order Control (Visible for n-th order, Series, Parallel) -->
+                    <div id="nOrderContainer" class="hidden">
                         <div class="flex justify-between items-center mb-1 text-xs">
-                            <label for="nOrderInput" class="text-slate-700 font-medium">Reaction Order ($n$ in $-r_A = k C_A^n$)</label>
-                            <span class="font-mono text-slate-800 font-bold">n = <span id="nOrderValue">1.0</span></span>
+                            <label for="nOrderInput" class="text-slate-700 font-medium">Reaction Order ($n$)</label>
+                            <span class="font-mono text-slate-800 font-bold">n = <span id="nOrderValue">1.5</span></span>
                         </div>
-                        <input type="range" id="nOrderInput" min="0.5" max="3.0" value="1.0" step="0.5" 
+                        <input type="range" id="nOrderInput" min="0.0" max="3.0" value="1.5" step="0.1" 
                                class="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
                                oninput="updateParams()">
                     </div>
 
-                    <!-- Temperature T -->
+                    <!-- Primary Rate Constant k1 / Temperature Controls -->
                     <div>
                         <div class="flex justify-between items-center mb-1 text-xs">
                             <label for="tempInput" class="text-slate-700 font-medium flex items-center gap-1">
-                                <i class="fa-solid fa-temperature-high text-red-500"></i> Operating Temperature ($T$)
+                                <i class="fa-solid fa-temperature-high text-red-500"></i> Temperature ($T$)
                             </label>
-                            <span class="font-mono text-ttu-purple font-bold"><span id="tempValue">350</span> K (<span id="tempCValue">76.85</span> °C)</span>
+                            <span class="font-mono text-ttu-purple font-bold"><span id="tempValue">350</span> K</span>
                         </div>
                         <input type="range" id="tempInput" min="273" max="500" value="350" step="1" 
                                class="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-ttu-purple"
                                oninput="updateParams()">
                     </div>
 
-                    <!-- Activation Energy Ea -->
+                    <!-- Activation Energy Ea1 -->
                     <div>
                         <div class="flex justify-between items-center mb-1 text-xs">
-                            <label for="eaInput" class="text-slate-600">Activation Energy ($E_a$)</label>
+                            <label for="eaInput" class="text-slate-600">Primary Activation Energy ($E_{a1}$)</label>
                             <span class="font-mono text-slate-700"><span id="eaValue">40.0</span> kJ/mol</span>
                         </div>
                         <input type="range" id="eaInput" min="10" max="90" value="40" step="1" 
@@ -225,21 +210,60 @@
                                oninput="updateParams()">
                     </div>
 
-                    <!-- Frequency Factor A0 -->
+                    <!-- Frequency Factor A01 -->
                     <div>
                         <div class="flex justify-between items-center mb-1 text-xs">
-                            <label for="freqInput" class="text-slate-600">Pre-exponential Factor ($A_0$)</label>
-                            <span class="font-mono text-slate-700">10^<span id="freqValue">5.5</span> <span id="rateUnit">s⁻¹</span></span>
+                            <label for="freqInput" class="text-slate-600">Pre-exponential Factor ($A_{01}$)</label>
+                            <span class="font-mono text-slate-700">10^<span id="freqValue">5.5</span></span>
                         </div>
                         <input type="range" id="freqInput" min="2" max="10" value="5.5" step="0.1" 
                                class="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
                                oninput="updateParams()">
                     </div>
 
-                    <!-- Computed Rate Constant k -->
+                    <!-- Reversible Reaction Equilibrium Constant Kc Input -->
+                    <div id="reversibleContainer" class="hidden p-2 bg-purple-100/60 rounded border border-purple-200 mt-2">
+                        <div class="flex justify-between items-center mb-1 text-xs">
+                            <label for="kcInput" class="text-purple-900 font-bold">Equilibrium Constant ($K_c$)</label>
+                            <span class="font-mono text-purple-900 font-bold"><span id="kcValue">1.50</span> mol/L</span>
+                        </div>
+                        <input type="range" id="kcInput" min="0.1" max="10.0" value="1.5" step="0.1" 
+                               class="w-full h-1.5 bg-purple-200 rounded-lg appearance-none cursor-pointer accent-ttu-purple"
+                               oninput="updateParams()">
+                    </div>
+
+                    <!-- Secondary Reaction Rate Constant Controls (For Series / Parallel) -->
+                    <div id="secondaryRxnContainer" class="hidden p-2.5 bg-amber-100/50 rounded-lg border border-amber-200 space-y-2 mt-2">
+                        <div class="font-bold text-amber-900 text-xs flex justify-between">
+                            <span id="secondaryRxnLabel">Secondary Reaction (B → 3C)</span>
+                            <span class="font-mono text-amber-800" id="k2Display">k₂ = 0.0100</span>
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between items-center mb-1 text-xs">
+                                <label for="ea2Input" class="text-slate-700">Secondary $E_{a2}$</label>
+                                <span class="font-mono text-slate-700"><span id="ea2Value">45.0</span> kJ/mol</span>
+                            </div>
+                            <input type="range" id="ea2Input" min="10" max="90" value="45" step="1" 
+                                   class="w-full h-1.5 bg-amber-200 rounded-lg appearance-none cursor-pointer accent-amber-600"
+                                   oninput="updateParams()">
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between items-center mb-1 text-xs">
+                                <label for="freq2Input" class="text-slate-700">Secondary $A_{02}$</label>
+                                <span class="font-mono text-slate-700">10^<span id="freq2Value">5.2</span></span>
+                            </div>
+                            <input type="range" id="freq2Input" min="2" max="10" value="5.2" step="0.1" 
+                                   class="w-full h-1.5 bg-amber-200 rounded-lg appearance-none cursor-pointer accent-amber-600"
+                                   oninput="updateParams()">
+                        </div>
+                    </div>
+
+                    <!-- Computed Rate Constants Display -->
                     <div class="pt-1 border-t border-blue-200 flex justify-between items-center text-xs">
-                        <span class="font-semibold text-blue-900">Computed Rate Constant ($k$):</span>
-                        <span id="kValueDisplay" class="font-mono font-bold text-ttu-purple">k = 0.0345</span>
+                        <span class="font-semibold text-blue-900">Primary Rate Constant ($k_1$):</span>
+                        <span id="kValueDisplay" class="font-mono font-bold text-ttu-purple">k₁ = 0.0345</span>
                     </div>
                 </div>
 
@@ -277,7 +301,7 @@
 
             <!-- Footer Reset Button -->
             <div class="p-3 bg-slate-50 border-t border-slate-200 flex justify-between items-center text-xs">
-                <span class="text-slate-500 font-medium"><i class="fa-solid fa-circle-info mr-1"></i> Real-time ODE Solution</span>
+                <span class="text-slate-500 font-medium"><i class="fa-solid fa-circle-info mr-1"></i> Real-time RK4 Integration</span>
                 <button onclick="resetDefaults()" class="py-2 px-3 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded-lg transition flex items-center gap-1">
                     <i class="fa-solid fa-rotate-left"></i> Reset Defaults
                 </button>
@@ -294,14 +318,14 @@
                 <div class="md:col-span-7 bg-white p-4 rounded-xl shadow-md border border-slate-200 flex flex-col items-center relative overflow-hidden">
                     <div class="w-full flex justify-between items-center mb-2">
                         <h3 class="font-bold text-ttu-purple text-sm flex items-center gap-2">
-                            <i class="fa-solid fa-pipe text-ttu-gold"></i> PFR Flow Schematic & Expansion
+                            <i class="fa-solid fa-pipe text-ttu-gold"></i> PFR Flow Schematic & Gas Expansion
                         </h3>
                         <span class="text-[11px] bg-amber-50 text-amber-800 px-2 py-0.5 rounded border border-amber-200 font-mono font-semibold">
-                            $v(V) = v_0(1 + \epsilon_A X_A)$
+                            $v(V) \propto F_T(V)$
                         </span>
                     </div>
 
-                    <!-- Canvas for Animated PFR Vessel with Volume Expansion/Contraction Visualization -->
+                    <!-- Canvas for Animated PFR Vessel -->
                     <div class="relative w-full h-[210px] flex items-center justify-center bg-slate-900/5 rounded-lg border border-slate-200 p-1">
                         <canvas id="pfrCanvas" width="340" height="200" class="max-w-full h-auto"></canvas>
                     </div>
@@ -327,7 +351,7 @@
                 <div class="md:col-span-5 bg-white p-4 rounded-xl shadow-md border border-slate-200 flex flex-col justify-between space-y-2">
                     <div class="flex justify-between items-center border-b border-slate-100 pb-2">
                         <h3 class="font-bold text-ttu-purple text-sm flex items-center gap-2">
-                            <i class="fa-solid fa-gauge-high"></i> Local Spatial Monitor
+                            <i class="fa-solid fa-gauge-high"></i> Spatial Probe Monitor
                         </h3>
                         <span id="probeBadge" class="bg-red-100 text-red-800 text-[10px] font-bold px-2 py-0.5 rounded border border-red-200">
                             At V = <span id="kpiProbeV">250</span> L
@@ -350,7 +374,7 @@
                         <div class="flex justify-between items-center bg-amber-50 p-2 rounded-lg border border-amber-100">
                             <div>
                                 <span class="text-amber-800 font-semibold block">Flow Rate ($v$)</span>
-                                <span class="text-[10px] text-amber-600 font-mono">Inlet: <span id="inletV0">10.0</span> L/s</span>
+                                <span class="text-[10px] text-amber-600 font-mono">Inlet $v_0$: <span id="inletV0">10.0</span> L/s</span>
                             </div>
                             <span class="font-mono font-bold text-amber-700 text-sm">
                                 <span id="kpiProbeVflow">15.4</span> L/s
@@ -360,8 +384,7 @@
                         <!-- Concentration CA(V) -->
                         <div class="flex justify-between items-center bg-purple-50 p-2 rounded-lg border border-purple-100">
                             <div>
-                                <span class="text-ttu-purple font-semibold block">$C_A(V)$ [Reactant]</span>
-                                <span class="text-[10px] text-purple-600 font-mono">Inlet $C_{A0}$: <span id="inletCA0">2.000</span></span>
+                                <span class="text-ttu-purple font-semibold block">$C_A(V)$ [Reactant A]</span>
                             </div>
                             <span class="font-mono font-bold text-ttu-purple text-sm">
                                 <span id="kpiProbeCA">0.593</span> mol/L
@@ -378,7 +401,17 @@
                             </span>
                         </div>
 
-                        <!-- Residence Time / Space Time tau -->
+                        <!-- Concentration CC(V) (For Series/Parallel) -->
+                        <div id="kpiCcContainer" class="hidden flex justify-between items-center bg-teal-50 p-2 rounded-lg border border-teal-100">
+                            <div>
+                                <span class="text-teal-800 font-semibold block">$C_C(V)$ [Product C]</span>
+                            </div>
+                            <span class="font-mono font-bold text-teal-700 text-sm">
+                                <span id="kpiProbeCC">0.000</span> mol/L
+                            </span>
+                        </div>
+
+                        <!-- Cumulative Space Time tau -->
                         <div class="flex justify-between items-center bg-slate-50 p-1.5 rounded-lg border border-slate-100">
                             <span class="text-slate-500 font-medium">Cumulative Space Time ($\tau$)</span>
                             <span class="font-mono font-bold text-slate-700 text-xs">
@@ -390,27 +423,30 @@
 
             </div>
 
-            <!-- Bottom Container: Dynamic Plot C(V) vs Reactor Volume -->
+            <!-- Bottom Container: Dynamic Plot Profiles vs Reactor Volume -->
             <div class="bg-white p-4 rounded-xl shadow-md border border-slate-200 flex flex-col flex-1">
                 
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-3">
                     <div>
                         <h3 class="font-bold text-ttu-purple text-sm flex items-center gap-2">
-                            <i class="fa-solid fa-chart-line text-ttu-gold"></i> Dynamic PFR Profiles vs. Reactor Volume ($V$)
+                            <i class="fa-solid fa-chart-line text-ttu-gold"></i> Dynamic Profiles vs. Reactor Volume ($V$)
                         </h3>
-                        <p class="text-xs text-slate-500">Spatial variation along PFR length. Volumetric expansion/contraction alters concentration gradients!</p>
+                        <p class="text-xs text-slate-500">Spatial variation along PFR length computed via vector RK4 system solver.</p>
                     </div>
 
                     <!-- Chart Display Switcher -->
                     <div class="flex bg-slate-100 p-1 rounded-lg border border-slate-200 text-xs">
                         <button id="btnViewConc" onclick="setPlotMode('conc')" class="px-2.5 py-1 rounded-md font-bold bg-white text-ttu-purple shadow-sm">
-                            Concentrations $C_j(V)$
+                            Concentrations $C_j$
                         </button>
                         <button id="btnViewConv" onclick="setPlotMode('conv')" class="px-2.5 py-1 rounded-md font-medium text-slate-600 hover:text-slate-900">
-                            Conversion $X_A(V)$
+                            Conversion $X_A$
                         </button>
                         <button id="btnViewFlow" onclick="setPlotMode('flow')" class="px-2.5 py-1 rounded-md font-medium text-slate-600 hover:text-slate-900">
                             Flow Rate $v(V)$
+                        </button>
+                        <button id="btnViewSelect" onclick="setPlotMode('selectivity')" class="hidden px-2.5 py-1 rounded-md font-medium text-slate-600 hover:text-slate-900">
+                            Yield & Selectivity
                         </button>
                     </div>
                 </div>
@@ -435,31 +471,32 @@
         const R = 8.314; // Gas constant J/(mol K)
 
         // Reactor Parameters State
-        let rxnType = 'A_to_2B';
-        let stoichB = 2.0;       // Products per reactant mole
+        let rxnType = '1st_order';
         let yA0 = 1.0;          // Reactant mole fraction in feed
         let cA0 = 2.0;          // Entering reactant concentration mol/L
         let v0 = 10.0;          // Entering volumetric flow rate L/s
-        let nOrder = 1.0;       // Reaction order
+        let nOrder = 1.5;       // Reaction order
         let tempK = 350;        // Temperature K
         let eaKj = 40.0;        // Activation energy kJ/mol
         let freqExp = 5.5;      // Log10 frequency factor
+        let kcEquil = 1.5;      // Equilibrium constant for reversible reaction
+        let ea2Kj = 45.0;       // Secondary activation energy for series/parallel
+        let freq2Exp = 5.2;     // Secondary log10 frequency factor
         let vTotal = 500.0;     // Total reactor volume L
         let vProbe = 250.0;     // Spatial probe position L
 
-        let plotMode = 'conc';  // 'conc', 'conv', 'flow'
+        let plotMode = 'conc';  // 'conc', 'conv', 'flow', 'selectivity'
 
-        // PFR Particles for Animation Loop
+        // Particle System
         let particles = [];
         const NUM_PARTICLES = 60;
-        let animationFrameId = null;
 
         // Chart & Canvas
         let pfrChart = null;
         let pfrCanvas = null;
         let ctx = null;
 
-        // Calculated state along reactor
+        // Simulation output
         let simResults = [];
 
         window.addEventListener('DOMContentLoaded', () => {
@@ -473,162 +510,221 @@
             requestAnimationFrame(animationLoop);
         });
 
-        // Initialize particles for PFR tubular flow
         function initParticles() {
             particles = [];
             for (let i = 0; i < NUM_PARTICLES; i++) {
                 particles.push({
-                    xPct: Math.random(), // 0.0 (inlet) to 1.0 (outlet)
-                    yOffset: (Math.random() - 0.5) * 0.7, // vertical spread in tube (-0.35 to +0.35)
+                    xPct: Math.random(),
+                    yOffset: (Math.random() - 0.5) * 0.7,
                     radius: Math.random() * 2.0 + 2.5
                 });
             }
         }
 
-        // Arrhenius calculation for rate constant k
-        function calcK() {
+        function calcK1() {
             const A0 = Math.pow(10, freqExp);
             return A0 * Math.exp(-(eaKj * 1000) / (R * tempK));
         }
 
-        // Calculate Stoichiometric Delta & Epsilon_A
-        function getExpansionParameters() {
-            let delta = 0;
-            if (rxnType === 'A_to_2B') {
-                delta = 2.0 - 1.0; // 1 mole A -> 2 moles B => delta = +1
-            } else if (rxnType === 'A_to_3B') {
-                delta = 3.0 - 1.0; // 1 mole A -> 3 moles B => delta = +2
-            } else if (rxnType === '2A_to_B') {
-                delta = 0.5 - 1.0; // 1 mole A -> 0.5 mole B => delta = -0.5
-            } else if (rxnType === 'A_to_B') {
-                delta = 1.0 - 1.0; // 0
-            } else if (rxnType === 'A_to_B_plus_C') {
-                delta = (1.0 + 1.0) - 1.0; // 1 mole A -> B + C => delta = +1
-            } else if (rxnType === 'custom_delta') {
-                delta = stoichB - 1.0;
-            }
-
-            const epsilonA = yA0 * delta;
-            return { delta, epsilonA };
+        function calcK2() {
+            const A02 = Math.pow(10, freq2Exp);
+            return A02 * Math.exp(-(ea2Kj * 1000) / (R * tempK));
         }
 
-        // Handle Reaction Scheme Selection
+        // Handle Change in Reaction Scheme Selection
         function onReactionTypeChange() {
             rxnType = document.getElementById('rxnTypeSelect').value;
-            const customContainer = document.getElementById('customStoichContainer');
+
+            const nOrderContainer = document.getElementById('nOrderContainer');
+            const reversibleContainer = document.getElementById('reversibleContainer');
+            const secondaryRxnContainer = document.getElementById('secondaryRxnContainer');
+            const secondaryRxnLabel = document.getElementById('secondaryRxnLabel');
             const legendSpeciesC = document.getElementById('legendSpeciesC');
+            const kpiCcContainer = document.getElementById('kpiCcContainer');
+            const btnViewSelect = document.getElementById('btnViewSelect');
             const headerTitle = document.getElementById('headerReactionTitle');
             const formulaBox = document.getElementById('formulaBox');
 
-            if (rxnType === 'custom_delta') {
-                customContainer.classList.remove('hidden');
-            } else {
-                customContainer.classList.add('hidden');
-            }
+            // Default visibility resets
+            nOrderContainer.classList.add('hidden');
+            reversibleContainer.classList.add('hidden');
+            secondaryRxnContainer.classList.add('hidden');
+            legendSpeciesC.classList.add('hidden');
+            kpiCcContainer.classList.add('hidden');
+            btnViewSelect.classList.add('hidden');
 
-            if (rxnType === 'A_to_B_plus_C') {
+            if (rxnType === '1st_order') {
+                headerTitle.innerHTML = "Reaction: <strong>1st-Order Irreversible ($A \\rightarrow 2B$)</strong>";
+                formulaBox.innerHTML = "$$\\frac{dF_A}{dV} = -k_1 C_A, \\quad \\frac{dF_B}{dV} = 2 k_1 C_A, \\quad v(V) = v_0 (1 + y_{A0} X_A)$$";
+            } else if (rxnType === '1st_reversible') {
+                headerTitle.innerHTML = "Reaction: <strong>1st-Order Reversible ($A \\rightleftharpoons 2B$)</strong>";
+                reversibleContainer.classList.remove('hidden');
+                formulaBox.innerHTML = "$$-r_A = k_1 \\left(C_A - \\frac{C_B^2}{K_c}\\right), \\quad \\frac{dF_A}{dV} = -r_A, \\quad \\frac{dF_B}{dV} = 2 r_A$$";
+            } else if (rxnType === '2nd_order') {
+                headerTitle.innerHTML = "Reaction: <strong>2nd-Order ($A \\rightarrow 2B$)</strong>";
+                formulaBox.innerHTML = "$$\\frac{dF_A}{dV} = -k_1 C_A^2, \\quad \\frac{dF_B}{dV} = 2 k_1 C_A^2, \\quad v(V) = v_0 (1 + y_{A0} X_A)$$";
+            } else if (rxnType === 'nth_order') {
+                headerTitle.innerHTML = "Reaction: <strong>n-th Order ($A \\rightarrow 2B$)</strong>";
+                nOrderContainer.classList.remove('hidden');
+                formulaBox.innerHTML = "$$\\frac{dF_A}{dV} = -k_1 C_A^n, \\quad \\frac{dF_B}{dV} = 2 k_1 C_A^n, \\quad v(V) = v_0 (1 + y_{A0} X_A)$$";
+            } else if (rxnType === 'series') {
+                headerTitle.innerHTML = "Reaction: <strong>Series ($A \\rightarrow 2B \\rightarrow 3C$)</strong>";
+                secondaryRxnContainer.classList.remove('hidden');
+                secondaryRxnLabel.textContent = "Secondary Reaction (B → 3C)";
                 legendSpeciesC.classList.remove('hidden');
-            } else {
-                legendSpeciesC.classList.add('hidden');
-            }
-
-            // Update formula LaTeX display
-            if (rxnType === 'A_to_2B') {
-                headerTitle.innerHTML = "Reaction: <strong>A &rarr; 2 B (Expansion $\\epsilon_A > 0$)</strong>";
-                formulaBox.innerHTML = "$$\\frac{dX_A}{dV} = \\frac{k C_A^n}{F_{A0}}, \\quad C_A(V) = C_{A0}\\frac{1-X_A}{1+\\epsilon_A X_A}, \\quad v(V) = v_0(1+\\epsilon_A X_A)$$";
-            } else if (rxnType === 'A_to_3B') {
-                headerTitle.innerHTML = "Reaction: <strong>A &rarr; 3 B (High Expansion $\\delta = +2$)</strong>";
-                formulaBox.innerHTML = "$$\\delta = 3 - 1 = +2, \\quad \\epsilon_A = 2 y_{A0}, \\quad C_B(V) = C_{A0}\\frac{3 X_A}{1+\\epsilon_A X_A}$$";
-            } else if (rxnType === '2A_to_B') {
-                headerTitle.innerHTML = "Reaction: <strong>2 A &rarr; B (Contraction $\\epsilon_A < 0$)</strong>";
-                formulaBox.innerHTML = "$$\\delta = 0.5 - 1 = -0.5, \\quad \\epsilon_A = -0.5 y_{A0}, \\quad v(V) = v_0(1 - 0.5 y_{A0} X_A)$$";
-            } else if (rxnType === 'A_to_B') {
-                headerTitle.innerHTML = "Reaction: <strong>A &rarr; B (Constant Volumetric Flow $\\epsilon_A = 0$)</strong>";
-                formulaBox.innerHTML = "$$\\delta = 0, \\quad \\epsilon_A = 0, \\quad v(V) = v_0, \\quad C_A(V) = C_{A0}(1 - X_A)$$";
-            } else if (rxnType === 'A_to_B_plus_C') {
-                headerTitle.innerHTML = "Reaction: <strong>A &rarr; B + C (Bimolecular Breakdown)</strong>";
-                formulaBox.innerHTML = "$$\\delta = (1+1)-1 = +1, \\quad C_B(V) = C_C(V) = C_{A0}\\frac{X_A}{1+\\epsilon_A X_A}$$";
-            } else if (rxnType === 'custom_delta') {
-                headerTitle.innerHTML = "Reaction: <strong>A &rarr; b B (Custom Stoichiometry)</strong>";
-                formulaBox.innerHTML = "$$\\delta = b - 1, \\quad \\epsilon_A = y_{A0}(b - 1), \\quad C_B(V) = C_{A0}\\frac{b X_A}{1+\\epsilon_A X_A}$$";
+                kpiCcContainer.classList.remove('hidden');
+                btnViewSelect.classList.remove('hidden');
+                formulaBox.innerHTML = "$$\\frac{dF_A}{dV} = -k_1 C_A, \\quad \\frac{dF_B}{dV} = 2 k_1 C_A - k_2 C_B, \\quad \\frac{dF_C}{dV} = 3 k_2 C_B$$";
+            } else if (rxnType === 'parallel') {
+                headerTitle.innerHTML = "Reaction: <strong>Parallel ($A \\rightarrow 2B$ & $A \\rightarrow 3C$)</strong>";
+                secondaryRxnContainer.classList.remove('hidden');
+                secondaryRxnLabel.textContent = "Parallel Reaction (A → 3C)";
+                legendSpeciesC.classList.remove('hidden');
+                kpiCcContainer.classList.remove('hidden');
+                btnViewSelect.classList.remove('hidden');
+                formulaBox.innerHTML = "$$\\frac{dF_A}{dV} = -k_1 C_A - k_2 C_A, \\quad \\frac{dF_B}{dV} = 2 k_1 C_A, \\quad \\frac{dF_C}{dV} = 3 k_2 C_A$$";
             }
 
             if (window.MathJax && MathJax.typesetPromise) {
-                MathJax.typesetPromise([formulaBox]);
+                MathJax.typesetPromise([formulaBox, headerTitle]);
             }
 
             updateParams();
         }
 
-        // RK4 Numerical ODE Solver for PFR along reactor volume V
+        // Multi-Component PFR Trajectory Solver (RK4 on Molar Flow Rates Vector [FA, FB, FC])
         function solvePFRTrajectory() {
             const numSteps = 200;
             const dV = vTotal / numSteps;
-            const k = calcK();
-            const { delta, epsilonA } = getExpansionParameters();
+            const k1 = calcK1();
+            const k2 = calcK2();
 
-            const FA0 = cA0 * v0; // Entering molar flow rate of A (mol/s)
+            // Feed conditions
+            const FA0 = cA0 * v0;
+            const FI0 = FA0 * (1 - yA0) / yA0; // Inert molar flow rate
+            const FT0 = FA0 + FI0;
 
-            let V = 0;
-            let XA = 0;
+            let FA = FA0;
+            let FB = 0.0;
+            let FC = 0.0;
+            let tauAcc = 0.0;
 
             const trajectory = [];
 
-            for (let i = 0; i <= numSteps; i++) {
-                V = i * dV;
+            const ratesEval = (fA_val, fB_val, fC_val) => {
+                const FT = Math.max(1e-9, fA_val + fB_val + fC_val + FI0);
+                const vFlow = v0 * (FT / FT0);
 
-                // Local volumetric flow rate
-                const vFlow = v0 * (1 + epsilonA * XA);
+                const cA = Math.max(0, fA_val / vFlow);
+                const cB = Math.max(0, fB_val / vFlow);
+                const cC = Math.max(0, fC_val / vFlow);
 
-                // Local concentrations
-                const CA = cA0 * (1 - XA) / (1 + epsilonA * XA);
-                const safeCA = Math.max(0, CA);
+                let rA = 0, rB = 0, rC = 0;
 
-                let CB = 0, CC = 0;
-                if (rxnType === 'A_to_2B') {
-                    CB = cA0 * (2.0 * XA) / (1 + epsilonA * XA);
-                } else if (rxnType === 'A_to_3B') {
-                    CB = cA0 * (3.0 * XA) / (1 + epsilonA * XA);
-                } else if (rxnType === '2A_to_B') {
-                    CB = cA0 * (0.5 * XA) / (1 + epsilonA * XA);
-                } else if (rxnType === 'A_to_B') {
-                    CB = cA0 * XA / (1 + epsilonA * XA);
-                } else if (rxnType === 'A_to_B_plus_C') {
-                    CB = cA0 * XA / (1 + epsilonA * XA);
-                    CC = cA0 * XA / (1 + epsilonA * XA);
-                } else if (rxnType === 'custom_delta') {
-                    CB = cA0 * (stoichB * XA) / (1 + epsilonA * XA);
+                if (rxnType === '1st_order') {
+                    rA = -k1 * cA;
+                    rB = 2.0 * k1 * cA;
+                    rC = 0;
+                } else if (rxnType === '1st_reversible') {
+                    const rNet = k1 * (cA - (cB * cB) / kcEquil);
+                    rA = -rNet;
+                    rB = 2.0 * rNet;
+                    rC = 0;
+                } else if (rxnType === '2nd_order') {
+                    rA = -k1 * cA * cA;
+                    rB = 2.0 * k1 * cA * cA;
+                    rC = 0;
+                } else if (rxnType === 'nth_order') {
+                    rA = -k1 * Math.pow(cA, nOrder);
+                    rB = 2.0 * k1 * Math.pow(cA, nOrder);
+                    rC = 0;
+                } else if (rxnType === 'series') {
+                    const r1 = k1 * cA;
+                    const r2 = k2 * cB;
+                    rA = -r1;
+                    rB = 2.0 * r1 - r2;
+                    rC = 3.0 * r2;
+                } else if (rxnType === 'parallel') {
+                    const r1 = k1 * cA;
+                    const r2 = k2 * cA;
+                    rA = -r1 - r2;
+                    rB = 2.0 * r1;
+                    rC = 3.0 * r2;
                 }
 
-                // Cumulative residence time tau = integral(dV / vFlow)
-                // Approximated cumulatively
-                const prevTau = trajectory.length > 0 ? trajectory[trajectory.length - 1].tau : 0;
-                const tau = prevTau + (i > 0 ? dV / vFlow : 0);
+                return { rA, rB, rC, vFlow, cA, cB, cC };
+            };
 
-                trajectory.push({ V, XA, CA: safeCA, CB, CC, vFlow, tau });
+            for (let i = 0; i <= numSteps; i++) {
+                const V = i * dV;
 
-                // RK4 step for dXA/dV = -rA / FA0 = k CA^n / FA0
+                const currentEval = ratesEval(FA, FB, FC);
+                const XA = Math.min(1.0, Math.max(0.0, (FA0 - FA) / FA0));
+
+                if (i > 0) {
+                    tauAcc += dV / currentEval.vFlow;
+                }
+
+                // Calculate Yield & Selectivity
+                let selectivityBC = 0;
+                let yieldB = 0;
+                if (FB > 0) {
+                    if (FC > 0) selectivityBC = FB / FC;
+                    yieldB = FB / (2 * FA0);
+                }
+
+                trajectory.push({
+                    V,
+                    FA,
+                    FB,
+                    FC,
+                    XA,
+                    CA: currentEval.cA,
+                    CB: currentEval.cB,
+                    CC: currentEval.cC,
+                    vFlow: currentEval.vFlow,
+                    tau: tauAcc,
+                    selectivityBC,
+                    yieldB
+                });
+
+                // RK4 step
                 if (i < numSteps) {
-                    const rateFunc = (xVal) => {
-                        const caLocal = Math.max(0, cA0 * (1 - xVal) / (1 + epsilonA * xVal));
-                        const rA = k * Math.pow(caLocal, nOrder);
-                        return rA / FA0;
-                    };
+                    const eval1 = ratesEval(FA, FB, FC);
 
-                    const k1 = rateFunc(XA);
-                    const k2 = rateFunc(Math.min(1.0, XA + 0.5 * dV * k1));
-                    const k3 = rateFunc(Math.min(1.0, XA + 0.5 * dV * k2));
-                    const k4 = rateFunc(Math.min(1.0, XA + dV * k3));
+                    const fA_k1 = eval1.rA;
+                    const fB_k1 = eval1.rB;
+                    const fC_k1 = eval1.rC;
 
-                    XA += (dV / 6.0) * (k1 + 2 * k2 + 2 * k3 + k4);
-                    XA = Math.min(0.9999, Math.max(0, XA));
+                    const eval2 = ratesEval(FA + 0.5 * dV * fA_k1, FB + 0.5 * dV * fB_k1, FC + 0.5 * dV * fC_k1);
+                    const fA_k2 = eval2.rA;
+                    const fB_k2 = eval2.rB;
+                    const fC_k2 = eval2.rC;
+
+                    const eval3 = ratesEval(FA + 0.5 * dV * fA_k2, FB + 0.5 * dV * fB_k2, FC + 0.5 * dV * fC_k2);
+                    const fA_k3 = eval3.rA;
+                    const fB_k3 = eval3.rB;
+                    const fC_k3 = eval3.rC;
+
+                    const eval4 = ratesEval(FA + dV * fA_k3, FB + dV * fB_k3, FC + dV * fC_k3);
+                    const fA_k4 = eval4.rA;
+                    const fB_k4 = eval4.rB;
+                    const fC_k4 = eval4.rC;
+
+                    FA += (dV / 6.0) * (fA_k1 + 2 * fA_k2 + 2 * fA_k3 + fA_k4);
+                    FB += (dV / 6.0) * (fB_k1 + 2 * fB_k2 + 2 * fB_k3 + fB_k4);
+                    FC += (dV / 6.0) * (fC_k1 + 2 * fC_k2 + 2 * fC_k3 + fC_k4);
+
+                    FA = Math.max(0, FA);
+                    FB = Math.max(0, FB);
+                    FC = Math.max(0, FC);
                 }
             }
 
             return trajectory;
         }
 
-        // Update Parameters from Input Controls
+        // Update Parameters from UI Controls
         function updateParams() {
             yA0 = parseFloat(document.getElementById('ya0Input').value);
             cA0 = parseFloat(document.getElementById('ca0Input').value);
@@ -637,8 +733,10 @@
             tempK = parseFloat(document.getElementById('tempInput').value);
             eaKj = parseFloat(document.getElementById('eaInput').value);
             freqExp = parseFloat(document.getElementById('freqInput').value);
+            kcEquil = parseFloat(document.getElementById('kcInput').value);
+            ea2Kj = parseFloat(document.getElementById('ea2Input').value);
+            freq2Exp = parseFloat(document.getElementById('freq2Input').value);
             vTotal = parseFloat(document.getElementById('vTotalInput').value);
-            stoichB = parseFloat(document.getElementById('stoichBInput').value);
 
             // Update probe min/max
             const probeInput = document.getElementById('probeInput');
@@ -646,45 +744,40 @@
             if (vProbe > vTotal) vProbe = vTotal;
             probeInput.value = vProbe;
 
-            const { delta, epsilonA } = getExpansionParameters();
-            const k = calcK();
+            const k1 = calcK1();
+            const k2 = calcK2();
 
-            // Labels update
+            // Calculate expansion factor epsilonA for A -> 2B base stoichiometry
+            const epsilonA = yA0 * (2.0 - 1.0);
+
+            // UI Labels update
             document.getElementById('ya0Value').textContent = yA0.toFixed(2);
             document.getElementById('ca0Value').textContent = cA0.toFixed(2);
             document.getElementById('v0Value').textContent = v0.toFixed(0);
             document.getElementById('nOrderValue').textContent = nOrder.toFixed(1);
             document.getElementById('tempValue').textContent = tempK;
-            document.getElementById('tempCValue').textContent = (tempK - 273.15).toFixed(2);
             document.getElementById('eaValue').textContent = eaKj.toFixed(1);
             document.getElementById('freqValue').textContent = freqExp.toFixed(1);
+            document.getElementById('kcValue').textContent = kcEquil.toFixed(2);
+            document.getElementById('ea2Value').textContent = ea2Kj.toFixed(1);
+            document.getElementById('freq2Value').textContent = freq2Exp.toFixed(1);
             document.getElementById('vTotalValue').textContent = vTotal;
-            document.getElementById('stoichBValue').textContent = stoichB.toFixed(2);
 
-            const epsText = (epsilonA >= 0 ? '+' : '') + epsilonA.toFixed(2);
+            const epsText = "+" + epsilonA.toFixed(2);
             document.getElementById('epsilonDisplay').textContent = epsText;
 
             const badge = document.getElementById('expansionBadge');
-            if (epsilonA > 0) {
-                badge.className = "bg-amber-100 text-amber-900 text-xs font-semibold px-2.5 py-0.5 rounded-full border border-amber-300";
-                badge.innerHTML = `$\\epsilon_A = ${epsText}$ (Expanding Gas)`;
-            } else if (epsilonA < 0) {
-                badge.className = "bg-blue-100 text-blue-900 text-xs font-semibold px-2.5 py-0.5 rounded-full border border-blue-300";
-                badge.innerHTML = `$\\epsilon_A = ${epsText}$ (Contracting Gas)`;
-            } else {
-                badge.className = "bg-slate-100 text-slate-800 text-xs font-semibold px-2.5 py-0.5 rounded-full border border-slate-300";
-                badge.innerHTML = `$\\epsilon_A = 0.00$ (Constant Volume)`;
-            }
+            badge.className = "bg-amber-100 text-amber-900 text-xs font-semibold px-2.5 py-0.5 rounded-full border border-amber-300";
+            badge.innerHTML = `$\\epsilon_A = ${epsText}$ (Expanding Gas)`;
 
             if (window.MathJax && MathJax.typesetPromise) {
                 MathJax.typesetPromise([badge]);
             }
 
-            const unitText = (nOrder === 1) ? 's⁻¹' : (nOrder === 2 ? 'L/(mol·s)' : `(mol/L)¹⁻ⁿ/s`);
-            document.getElementById('rateUnit').textContent = unitText;
-            document.getElementById('kValueDisplay').textContent = `k = ${k < 0.001 ? k.toExponential(3) : k.toFixed(4)} ${unitText}`;
+            document.getElementById('kValueDisplay').textContent = `k₁ = ${k1 < 0.001 ? k1.toExponential(3) : k1.toFixed(4)}`;
+            document.getElementById('k2Display').textContent = `k₂ = ${k2 < 0.001 ? k2.toExponential(3) : k2.toFixed(4)}`;
 
-            // Solve differential equations
+            // Execute trajectory simulation
             simResults = solvePFRTrajectory();
 
             updateKPIs();
@@ -702,8 +795,9 @@
             const bConc = document.getElementById('btnViewConc');
             const bConv = document.getElementById('btnViewConv');
             const bFlow = document.getElementById('btnViewFlow');
+            const bSelect = document.getElementById('btnViewSelect');
 
-            [bConc, bConv, bFlow].forEach(b => {
+            [bConc, bConv, bFlow, bSelect].forEach(b => {
                 b.className = "px-2.5 py-1 rounded-md font-medium text-slate-600 hover:text-slate-900";
             });
 
@@ -713,34 +807,37 @@
                 bConv.className = "px-2.5 py-1 rounded-md font-bold bg-white text-emerald-700 shadow-sm";
             } else if (mode === 'flow') {
                 bFlow.className = "px-2.5 py-1 rounded-md font-bold bg-white text-amber-700 shadow-sm";
+            } else if (mode === 'selectivity') {
+                bSelect.className = "px-2.5 py-1 rounded-md font-bold bg-white text-teal-700 shadow-sm";
             }
 
             updateChartData();
         }
 
         function resetDefaults() {
-            document.getElementById('rxnTypeSelect').value = 'A_to_2B';
+            document.getElementById('rxnTypeSelect').value = '1st_order';
             document.getElementById('ya0Input').value = 1.0;
             document.getElementById('ca0Input').value = 2.0;
             document.getElementById('v0Input').value = 10.0;
-            document.getElementById('nOrderInput').value = 1.0;
+            document.getElementById('nOrderInput').value = 1.5;
             document.getElementById('tempInput').value = 350;
             document.getElementById('eaInput').value = 40.0;
             document.getElementById('freqInput').value = 5.5;
+            document.getElementById('kcInput').value = 1.5;
+            document.getElementById('ea2Input').value = 45.0;
+            document.getElementById('freq2Input').value = 5.2;
             document.getElementById('vTotalInput').value = 500;
             document.getElementById('probeInput').value = 250;
-            document.getElementById('stoichBInput').value = 2.0;
 
             onReactionTypeChange();
         }
 
-        // Update KPI values in side monitor
+        // Update Spatial Monitor KPIs
         function updateKPIs() {
             if (!simResults || simResults.length === 0) return;
 
             const exitData = simResults[simResults.length - 1];
             
-            // Find trajectory point corresponding to spatial probe
             let probeData = simResults[0];
             for (let i = 0; i < simResults.length; i++) {
                 if (simResults[i].V >= vProbe) {
@@ -760,9 +857,9 @@
             document.getElementById('inletV0').textContent = v0.toFixed(1);
             document.getElementById('kpiProbeVflow').textContent = probeData.vFlow.toFixed(1);
 
-            document.getElementById('inletCA0').textContent = cA0.toFixed(3);
             document.getElementById('kpiProbeCA').textContent = probeData.CA.toFixed(3);
             document.getElementById('kpiProbeCB').textContent = probeData.CB.toFixed(3);
+            document.getElementById('kpiProbeCC').textContent = probeData.CC.toFixed(3);
             document.getElementById('kpiProbeTau').textContent = probeData.tau.toFixed(1);
         }
 
@@ -806,90 +903,90 @@
             });
         }
 
-        // Update Chart Data based on plotMode
+        // Update Chart Datasets
         function updateChartData() {
             if (!pfrChart || simResults.length === 0) return;
 
-            const labels = [];
+            const labels = simResults.map(pt => pt.V.toFixed(0));
             const datasets = [];
-
-            simResults.forEach(pt => {
-                labels.push(pt.V.toFixed(0));
-            });
-
-            // Spatial probe position dataset marker
-            const probeMarkerData = simResults.map(pt => (Math.abs(pt.V - vProbe) < (vTotal / 100) ? 1 : null));
 
             if (plotMode === 'conc') {
                 pfrChart.options.scales.y.title.text = 'Concentration (mol/L)';
 
-                const caData = simResults.map(pt => pt.CA);
-                const cbData = simResults.map(pt => pt.CB);
-                const ccData = simResults.map(pt => pt.CC);
-
                 datasets.push({
-                    label: 'CA(V) [Reactant A]',
-                    data: caData,
-                    borderColor: '#4F2984', // TTU Purple
+                    label: 'C_A(V) [Reactant A]',
+                    data: simResults.map(pt => pt.CA),
+                    borderColor: '#4F2984',
                     backgroundColor: 'rgba(79, 41, 132, 0.08)',
                     borderWidth: 3,
                     fill: true,
-                    pointRadius: 0,
-                    tension: 0.1
+                    pointRadius: 0
                 });
 
                 datasets.push({
-                    label: 'CB(V) [Product B]',
-                    data: cbData,
-                    borderColor: '#FFC72C', // TTU Gold
+                    label: 'C_B(V) [Product B]',
+                    data: simResults.map(pt => pt.CB),
+                    borderColor: '#FFC72C',
                     backgroundColor: 'rgba(255, 199, 44, 0.12)',
                     borderWidth: 3,
                     fill: true,
-                    pointRadius: 0,
-                    tension: 0.1
+                    pointRadius: 0
                 });
 
-                if (rxnType === 'A_to_B_plus_C') {
+                if (rxnType === 'series' || rxnType === 'parallel') {
                     datasets.push({
-                        label: 'CC(V) [Product C]',
-                        data: ccData,
-                        borderColor: '#14B8A6', // Teal
+                        label: 'C_C(V) [Product C]',
+                        data: simResults.map(pt => pt.CC),
+                        borderColor: '#14B8A6',
                         backgroundColor: 'rgba(20, 184, 166, 0.1)',
                         borderWidth: 3,
                         fill: true,
-                        pointRadius: 0,
-                        tension: 0.1
+                        pointRadius: 0
                     });
                 }
             } else if (plotMode === 'conv') {
                 pfrChart.options.scales.y.title.text = 'Conversion X_A';
 
-                const xaData = simResults.map(pt => pt.XA);
-
                 datasets.push({
-                    label: 'Conversion XA(V)',
-                    data: xaData,
-                    borderColor: '#059669', // Emerald
+                    label: 'Conversion X_A(V)',
+                    data: simResults.map(pt => pt.XA),
+                    borderColor: '#059669',
                     backgroundColor: 'rgba(5, 150, 105, 0.12)',
                     borderWidth: 3,
                     fill: true,
-                    pointRadius: 0,
-                    tension: 0.1
+                    pointRadius: 0
                 });
             } else if (plotMode === 'flow') {
                 pfrChart.options.scales.y.title.text = 'Volumetric Flow Rate v(V) (L/s)';
 
-                const vData = simResults.map(pt => pt.vFlow);
-
                 datasets.push({
                     label: 'Flow Rate v(V) [L/s]',
-                    data: vData,
-                    borderColor: '#D97706', // Amber
+                    data: simResults.map(pt => pt.vFlow),
+                    borderColor: '#D97706',
                     backgroundColor: 'rgba(217, 119, 6, 0.12)',
                     borderWidth: 3,
                     fill: true,
-                    pointRadius: 0,
-                    tension: 0.1
+                    pointRadius: 0
+                });
+            } else if (plotMode === 'selectivity') {
+                pfrChart.options.scales.y.title.text = 'Ratio / Yield';
+
+                datasets.push({
+                    label: 'Selectivity S_{B/C} (F_B / F_C)',
+                    data: simResults.map(pt => pt.selectivityBC),
+                    borderColor: '#0284C7',
+                    borderWidth: 2.5,
+                    fill: false,
+                    pointRadius: 0
+                });
+
+                datasets.push({
+                    label: 'Yield Y_B (F_B / 2 F_{A0})',
+                    data: simResults.map(pt => pt.yieldB),
+                    borderColor: '#D97706',
+                    borderWidth: 2.5,
+                    fill: false,
+                    pointRadius: 0
                 });
             }
 
@@ -912,20 +1009,17 @@
 
             ctx.clearRect(0, 0, width, height);
 
-            const { delta, epsilonA } = getExpansionParameters();
-
-            // PFR Tube Geometry
             const marginX = 35;
             const tubeY = height / 2;
             const tubeLength = width - 2 * marginX;
 
-            // Geometry showing physical volume expansion or contraction
-            // Inlet height vs Outlet height visual representation
-            const hInlet = 50;
-            const expansionFactor = 1 + 0.35 * Math.max(-0.8, Math.min(2.0, epsilonA));
-            const hOutlet = hInlet * expansionFactor;
+            // Geometry expansion based on inlet vs outlet flow rate ratio
+            const exitPt = simResults.length > 0 ? simResults[simResults.length - 1] : { vFlow: v0 };
+            const expansionRatio = Math.max(0.7, Math.min(2.2, exitPt.vFlow / v0));
 
-            // Draw PFR Outer Shell (Trapezoidal / Cylindrical tube)
+            const hInlet = 50;
+            const hOutlet = hInlet * (1 + 0.35 * (expansionRatio - 1));
+
             const xIn = marginX;
             const xOut = marginX + tubeLength;
 
@@ -934,7 +1028,7 @@
             const yTopOut = tubeY - hOutlet / 2;
             const yBotOut = tubeY + hOutlet / 2;
 
-            // 1. PFR Wall Background
+            // 1. Outer Vessel Boundary
             ctx.beginPath();
             ctx.moveTo(xIn, yTopIn);
             ctx.lineTo(xOut, yTopOut);
@@ -942,14 +1036,13 @@
             ctx.lineTo(xIn, yBotIn);
             ctx.closePath();
 
-            ctx.fillStyle = '#1E293B'; // Dark Slate PFR interior background
+            ctx.fillStyle = '#1E293B';
             ctx.fill();
             ctx.strokeStyle = '#475569';
             ctx.lineWidth = 3;
             ctx.stroke();
 
-            // 2. Concentration Color Gradient along PFR tube length
-            // Get local species fractions at inlet, middle, outlet
+            // 2. Concentration Color Field
             const numSegments = 40;
             const segWidth = tubeLength / numSegments;
 
@@ -957,11 +1050,9 @@
                 const segPct = i / numSegments;
                 const segX = xIn + segPct * tubeLength;
 
-                // Local top and bottom
                 const segH = hInlet + segPct * (hOutlet - hInlet);
                 const segYtop = tubeY - segH / 2;
 
-                // Find corresponding trajectory data
                 const trajIdx = Math.min(simResults.length - 1, Math.floor(segPct * simResults.length));
                 const res = simResults[trajIdx] || { CA: cA0, CB: 0, CC: 0 };
 
@@ -978,30 +1069,27 @@
                 ctx.fillRect(segX, segYtop + 2, segWidth + 0.5, segH - 4);
             }
 
-            // 3. Draw Spatial Probe Cursor
+            // 3. Spatial Probe Marker
             const probePct = vProbe / vTotal;
             const probeX = xIn + probePct * tubeLength;
             const probeH = hInlet + probePct * (hOutlet - hInlet);
 
-            ctx.strokeStyle = '#EF4444'; // Red probe line
+            ctx.strokeStyle = '#EF4444';
             ctx.lineWidth = 2;
             ctx.setLineDash([4, 4]);
             ctx.beginPath();
             ctx.moveTo(probeX, tubeY - probeH / 2 - 8);
             ctx.lineTo(probeX, tubeY + probeH / 2 + 8);
             ctx.stroke();
-            ctx.setLineDash([]); // Reset dash
+            ctx.setLineDash([]);
 
-            // Probe handle marker
             ctx.fillStyle = '#EF4444';
             ctx.beginPath();
             ctx.arc(probeX, tubeY - probeH / 2 - 8, 4, 0, Math.PI * 2);
             ctx.fill();
 
-            // 4. Animate Flow Gas Particles through PFR
-            // Speed of particle is proportional to local volumetric flow rate v(V)
+            // 4. Gas Particles Animation Flow
             particles.forEach((p, idx) => {
-                // Determine local vFlow
                 const trajIdx = Math.min(simResults.length - 1, Math.floor(p.xPct * simResults.length));
                 const res = simResults[trajIdx] || { vFlow: v0, CA: cA0, CB: 0, CC: 0 };
 
@@ -1013,25 +1101,23 @@
                     p.yOffset = (Math.random() - 0.5) * 0.7;
                 }
 
-                // Compute particle pixel position
                 const pX = xIn + p.xPct * tubeLength;
                 const currentH = hInlet + p.xPct * (hOutlet - hInlet);
                 const pY = tubeY + p.yOffset * (currentH - 12);
 
-                // Molecule species color based on local conversion
                 const totalC = res.CA + res.CB + res.CC;
                 const fracB = totalC > 0 ? res.CB / totalC : 0;
                 const fracC = totalC > 0 ? res.CC / totalC : 0;
 
                 const randVal = (idx / NUM_PARTICLES);
-                let pColor = '#4F2984'; // Species A
+                let pColor = '#4F2984'; // Reactant A
                 let pBorder = '#FFFFFF';
 
                 if (randVal < fracB) {
-                    pColor = '#FFC72C'; // Species B
+                    pColor = '#FFC72C'; // Product B
                     pBorder = '#B45309';
                 } else if (randVal < (fracB + fracC)) {
-                    pColor = '#14B8A6'; // Species C
+                    pColor = '#14B8A6'; // Product C
                     pBorder = '#0F766E';
                 }
 
@@ -1044,7 +1130,7 @@
                 ctx.stroke();
             });
 
-            // 5. Inflow & Outflow Directional Arrows & Labels
+            // 5. Inflow & Outflow Annotations
             ctx.fillStyle = '#334155';
             ctx.font = 'bold 10px sans-serif';
             ctx.textAlign = 'center';
@@ -1052,12 +1138,10 @@
             ctx.fillText('Feed Gas (v₀)', xIn - 5, tubeY - hInlet / 2 - 12);
             ctx.fillText('Product Gas (v)', xOut + 5, tubeY - hOutlet / 2 - 12);
 
-            // Flow arrows
             drawArrow(ctx, 5, tubeY, xIn - 5, tubeY, '#4F2984');
             drawArrow(ctx, xOut + 5, tubeY, width - 5, tubeY, '#D97706');
         }
 
-        // Helper function to draw directional arrows on canvas
         function drawArrow(ctx, fromx, fromy, tox, toy, color) {
             const headlen = 8;
             const dx = tox - fromx;
