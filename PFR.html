@@ -650,32 +650,47 @@
 
             let rA = 0, rB = 0, rC = 0;
 
+            // Reactant availability check: reaction stops if reactant is depleted (cA <= 0)
+            const activeA = cA > 1e-10 && nA_val > 1e-10;
+            const activeB = cB > 1e-10 && nB_val > 1e-10;
+
             if (rxnType === '1st_order') {
-                rA = -k1 * cA;
-                rB = 2.0 * k1 * cA;
+                const rate = activeA ? k1 * cA : 0;
+                rA = -rate;
+                rB = 2.0 * rate;
                 rC = 0;
             } else if (rxnType === '1st_reversible') {
-                const rNet = k1 * (cA - (cB * cB) / kcEquil);
+                let rNet = 0;
+                if (activeA || activeB) {
+                    rNet = k1 * (cA - (cB * cB) / kcEquil);
+                    // Halt forward reaction if A is completely depleted
+                    if (!activeA && rNet > 0) rNet = 0;
+                    // Halt reverse reaction if B is completely depleted
+                    if (!activeB && rNet < 0) rNet = 0;
+                }
                 rA = -rNet;
                 rB = 2.0 * rNet;
                 rC = 0;
             } else if (rxnType === '2nd_order') {
-                rA = -k1 * cA * cA;
-                rB = 2.0 * k1 * cA * cA;
+                const rate = activeA ? k1 * cA * cA : 0;
+                rA = -rate;
+                rB = 2.0 * rate;
                 rC = 0;
             } else if (rxnType === 'nth_order') {
-                rA = -k1 * Math.pow(cA, nOrder);
-                rB = 2.0 * k1 * Math.pow(cA, nOrder);
+                // For zero-order (n=0) or nth-order, rate MUST drop to 0 when reactant A is depleted
+                const rate = activeA ? k1 * Math.pow(cA, nOrder) : 0;
+                rA = -rate;
+                rB = 2.0 * rate;
                 rC = 0;
             } else if (rxnType === 'series') {
-                const r1 = k1 * cA;
-                const r2 = k2 * cB;
+                const r1 = activeA ? k1 * cA : 0;
+                const r2 = activeB ? k2 * cB : 0;
                 rA = -r1;
                 rB = 2.0 * r1 - r2;
                 rC = 3.0 * r2;
             } else if (rxnType === 'parallel') {
-                const r1 = k1 * cA;
-                const r2 = k2 * cA;
+                const r1 = activeA ? k1 * cA : 0;
+                const r2 = activeA ? k2 * cA : 0;
                 rA = -r1 - r2;
                 rB = 2.0 * r1;
                 rC = 3.0 * r2;
@@ -744,9 +759,15 @@
                 NB += (dV / 6.0) * (nB_k1 + 2 * nB_k2 + 2 * nB_k3 + nB_k4);
                 NC += (dV / 6.0) * (nC_k1 + 2 * nC_k2 + 2 * nC_k3 + nC_k4);
 
-                NA = Math.max(0, NA);
-                NB = Math.max(0, NB);
-                NC = Math.max(0, NC);
+                // Physical mole balance bounds: molar flows cannot be negative
+                if (NA < 1e-10) NA = 0;
+                if (NB < 1e-10) NB = 0;
+                if (NC < 1e-10) NC = 0;
+
+                // For single stoichiometry reactions (A -> 2B), strictly bound NB by mass conservation
+                if (rxnType === '1st_order' || rxnType === '2nd_order' || rxnType === 'nth_order') {
+                    NB = 2.0 * (NA0 - NA);
+                }
             }
         }
 
