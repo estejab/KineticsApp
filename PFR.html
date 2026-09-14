@@ -127,13 +127,13 @@
                 <!-- Formula & Design Equation Box -->
                 <div class="bg-purple-50 p-3 rounded-lg border border-purple-200 text-xs">
                     <div class="text-ttu-purple font-bold mb-1 flex items-center justify-between">
-                        <span>PFR Design Equations</span>
+                        <span>PFR Design Equations (Rawlings & Ekerdt Notation)</span>
                         <span id="vFormulaBadge" class="text-[10px] bg-purple-200 text-ttu-purple px-1.5 py-0.5 rounded font-mono font-semibold">
                             $v = v_0$
                         </span>
                     </div>
                     <div id="formulaBox" class="font-mono text-slate-800 text-center py-2 bg-white rounded border border-purple-100 shadow-inner overflow-x-auto min-h-[50px] flex items-center justify-center px-2">
-                        $$\frac{dF_A}{dV} = r_A, \quad C_A = \frac{F_A}{v}, \quad v = v_0$$
+                        $$\frac{dN_A}{dV} = r_A, \quad C_A = \frac{N_A}{v}, \quad v = v_0$$
                     </div>
                 </div>
 
@@ -505,7 +505,7 @@
 
     window.addEventListener('DOMContentLoaded', () => {
         pfrCanvas = document.getElementById('pfrCanvas');
-        ctx = pfrCanvas.getContext('2d');
+        if (pfrCanvas) ctx = pfrCanvas.getContext('2d');
 
         initParticles();
         initChart();
@@ -535,7 +535,6 @@
         return A02 * Math.exp(-(ea2Kj * 1000) / (R * tempK));
     }
 
-    // Handle Change in Reaction Scheme Selection
     function onReactionTypeChange() {
         rxnType = document.getElementById('rxnTypeSelect').value;
 
@@ -548,7 +547,6 @@
         const btnViewSelect = document.getElementById('btnViewSelect');
         const headerTitle = document.getElementById('headerReactionTitle');
 
-        // Default visibility resets
         nOrderContainer.classList.add('hidden');
         reversibleContainer.classList.add('hidden');
         secondaryRxnContainer.classList.add('hidden');
@@ -585,37 +583,36 @@
         updateParams();
     }
 
-    // Multi-Component PFR Trajectory Solver (RK4)
     function solvePFRTrajectory() {
         const numSteps = 200;
         const dV = vTotal / numSteps;
         const k1 = calcK1();
         const k2 = calcK2();
 
-        // Feed conditions
-        const FA0 = cA0 * v0;
-        const FI0 = FA0 * (1 - yA0) / yA0; // Inert molar flow rate
-        const FT0 = FA0 + FI0;
+        // Feed conditions in Rawlings & Ekerdt notation (N = molar flow rate mol/s)
+        const NA0 = cA0 * v0;
+        const NI0 = NA0 * (1 - yA0) / yA0; // Inert molar flow rate
+        const NT0 = NA0 + NI0;
 
-        let FA = FA0;
-        let FB = 0.0;
-        let FC = 0.0;
+        let NA = NA0;
+        let NB = 0.0;
+        let NC = 0.0;
         let tauAcc = 0.0;
 
         const trajectory = [];
 
-        const ratesEval = (fA_val, fB_val, fC_val) => {
+        const ratesEval = (nA_val, nB_val, nC_val) => {
             let vFlow = v0;
             if (phase === 'gas') {
-                const FT = Math.max(1e-9, fA_val + fB_val + fC_val + FI0);
-                vFlow = v0 * (FT / FT0);
+                const NT = Math.max(1e-9, nA_val + nB_val + nC_val + NI0);
+                vFlow = v0 * (NT / NT0);
             } else {
                 vFlow = v0; // Liquid phase constant volumetric flow rate
             }
 
-            const cA = Math.max(0, fA_val / vFlow);
-            const cB = Math.max(0, fB_val / vFlow);
-            const cC = Math.max(0, fC_val / vFlow);
+            const cA = Math.max(0, nA_val / vFlow);
+            const cB = Math.max(0, nB_val / vFlow);
+            const cC = Math.max(0, nC_val / vFlow);
 
             let rA = 0, rB = 0, rC = 0;
 
@@ -656,26 +653,26 @@
         for (let i = 0; i <= numSteps; i++) {
             const V = i * dV;
 
-            const currentEval = ratesEval(FA, FB, FC);
-            const XA = Math.min(1.0, Math.max(0.0, (FA0 - FA) / FA0));
+            const currentEval = ratesEval(NA, NB, NC);
+            const XA = Math.min(1.0, Math.max(0.0, (NA0 - NA) / NA0));
 
             if (i > 0) {
                 tauAcc += dV / currentEval.vFlow;
             }
 
-            // Calculate Yield & Selectivity
+            // Yield & Selectivity based on molar flow rates (N_B / N_C)
             let selectivityBC = 0;
             let yieldB = 0;
-            if (FB > 0) {
-                if (FC > 0) selectivityBC = FB / FC;
-                yieldB = FB / (2 * FA0);
+            if (NB > 0) {
+                if (NC > 0) selectivityBC = NB / NC;
+                yieldB = NB / (2 * NA0);
             }
 
             trajectory.push({
                 V,
-                FA,
-                FB,
-                FC,
+                NA,
+                NB,
+                NC,
                 XA,
                 CA: currentEval.cA,
                 CB: currentEval.cB,
@@ -686,43 +683,42 @@
                 yieldB
             });
 
-            // RK4 step
+            // Standard RK4 Step
             if (i < numSteps) {
-                const eval1 = ratesEval(FA, FB, FC);
+                const eval1 = ratesEval(NA, NB, NC);
 
-                const fA_k1 = eval1.rA;
-                const fB_k1 = eval1.rB;
-                const fC_k1 = eval1.rC;
+                const nA_k1 = eval1.rA;
+                const nB_k1 = eval1.rB;
+                const nC_k1 = eval1.rC;
 
-                const eval2 = ratesEval(FA + 0.5 * dV * fA_k1, FB + 0.5 * dV * fB_k1, FC + 0.5 * dV * fC_k1);
-                const fA_k2 = eval2.rA;
-                const fB_k2 = eval2.rB;
-                const fC_k2 = eval2.rC;
+                const eval2 = ratesEval(NA + 0.5 * dV * nA_k1, NB + 0.5 * dV * nB_k1, NC + 0.5 * dV * nC_k1);
+                const nA_k2 = eval2.rA;
+                const nB_k2 = eval2.rB;
+                const nC_k2 = eval2.rC;
 
-                const eval3 = ratesEval(FA + 0.5 * dV * fA_k2, FB + 0.5 * dV * fB_k2, FC + 0.5 * dV * fC_k2);
-                const fA_k3 = eval3.rA;
-                const fB_k3 = eval3.rB;
-                const fC_k3 = eval3.rC;
+                const eval3 = ratesEval(NA + 0.5 * dV * nA_k2, NB + 0.5 * dV * nB_k2, NC + 0.5 * dV * nC_k2);
+                const nA_k3 = eval3.rA;
+                const nB_k3 = eval3.rB;
+                const nC_k3 = eval3.rC;
 
-                const eval4 = ratesEval(FA + dV * fA_k3, FB + dV * fB_k3, FC + dV * fC_k3);
-                const fA_k4 = eval4.rA;
-                const fB_k4 = eval4.rB;
-                const fC_k4 = eval4.rC;
+                const eval4 = ratesEval(NA + dV * nA_k3, NB + dV * nB_k3, NC + dV * nC_k3);
+                const nA_k4 = eval4.rA;
+                const nB_k4 = eval4.rB;
+                const nC_k4 = eval4.rC;
 
-                FA += (dV / 6.0) * (fA_k1 + 2 * fA_k2 + 2 * fA_k3 + fA_k4);
-                FB += (dV / 6.0) * (fB_k1 + 2 * fB_k2 + 2 * fB_k3 + fB_k4);
-                FC += (dV / 6.0) * (fC_k1 + 2 * fC_k2 + 2 * fC_k3 + fC_k4);
+                NA += (dV / 6.0) * (nA_k1 + 2 * nA_k2 + 2 * nA_k3 + nA_k4);
+                NB += (dV / 6.0) * (nB_k1 + 2 * nB_k2 + 2 * nB_k3 + nB_k4);
+                NC += (dV / 6.0) * (nC_k1 + 2 * nC_k2 + 2 * nC_k3 + nC_k4);
 
-                FA = Math.max(0, FA);
-                FB = Math.max(0, FB);
-                FC = Math.max(0, FC);
+                NA = Math.max(0, NA);
+                NB = Math.max(0, NB);
+                NC = Math.max(0, NC);
             }
         }
 
         return trajectory;
     }
 
-    // Update Parameters from UI Controls
     function updateParams() {
         phase = document.getElementById('phaseSelect').value;
         yA0 = parseFloat(document.getElementById('ya0Input').value);
@@ -737,7 +733,7 @@
         freq2Exp = parseFloat(document.getElementById('freq2Input').value);
         vTotal = parseFloat(document.getElementById('vTotalInput').value);
 
-        // Update probe min/max
+        // Update probe range
         const probeInput = document.getElementById('probeInput');
         probeInput.max = vTotal;
         if (vProbe > vTotal) vProbe = vTotal;
@@ -746,7 +742,6 @@
         const k1 = calcK1();
         const k2 = calcK2();
 
-        // UI Labels update
         document.getElementById('ya0Value').textContent = yA0.toFixed(2);
         document.getElementById('ca0Value').textContent = cA0.toFixed(2);
         document.getElementById('v0Value').textContent = v0.toFixed(0);
@@ -771,41 +766,41 @@
             canvasFlowBadge.textContent = "Liquid Phase (v = v₀)";
 
             if (rxnType === '1st_order') {
-                formulaBox.innerHTML = "$$\\frac{dF_A}{dV} = -k_1 C_A, \\quad C_A = \\frac{F_A}{v_0}, \\quad v(V) = v_0$$";
+                formulaBox.innerHTML = "$$\\frac{dN_A}{dV} = -k_1 C_A, \\quad C_A = \\frac{N_A}{v_0}, \\quad v(V) = v_0$$";
             } else if (rxnType === '1st_reversible') {
-                formulaBox.innerHTML = "$$-r_A = k_1 \\left(C_A - \\frac{C_B^2}{K_c}\\right), \\quad C_j = \\frac{F_j}{v_0}, \\quad v(V) = v_0$$";
+                formulaBox.innerHTML = "$$-r_A = k_1 \\left(C_A - \\frac{C_B^2}{K_c}\\right), \\quad C_j = \\frac{N_j}{v_0}, \\quad v(V) = v_0$$";
             } else if (rxnType === '2nd_order') {
-                formulaBox.innerHTML = "$$\\frac{dF_A}{dV} = -k_1 C_A^2, \\quad C_A = \\frac{F_A}{v_0}, \\quad v(V) = v_0$$";
+                formulaBox.innerHTML = "$$\\frac{dN_A}{dV} = -k_1 C_A^2, \\quad C_A = \\frac{N_A}{v_0}, \\quad v(V) = v_0$$";
             } else if (rxnType === 'nth_order') {
-                formulaBox.innerHTML = "$$\\frac{dF_A}{dV} = -k_1 C_A^n, \\quad C_A = \\frac{F_A}{v_0}, \\quad v(V) = v_0$$";
+                formulaBox.innerHTML = "$$\\frac{dN_A}{dV} = -k_1 C_A^n, \\quad C_A = \\frac{N_A}{v_0}, \\quad v(V) = v_0$$";
             } else if (rxnType === 'series') {
-                formulaBox.innerHTML = "$$\\frac{dF_A}{dV} = -k_1 C_A, \\quad \\frac{dF_B}{dV} = 2 k_1 C_A - k_2 C_B, \\quad v(V) = v_0$$";
+                formulaBox.innerHTML = "$$\\frac{dN_A}{dV} = -k_1 C_A, \\quad \\frac{dN_B}{dV} = 2 k_1 C_A - k_2 C_B, \\quad v(V) = v_0$$";
             } else if (rxnType === 'parallel') {
-                formulaBox.innerHTML = "$$\\frac{dF_A}{dV} = -k_1 C_A - k_2 C_A, \\quad \\frac{dF_B}{dV} = 2 k_1 C_A, \\quad v(V) = v_0$$";
+                formulaBox.innerHTML = "$$\\frac{dN_A}{dV} = -k_1 C_A - k_2 C_A, \\quad \\frac{dN_B}{dV} = 2 k_1 C_A, \\quad v(V) = v_0$$";
             }
         } else {
             phaseBadge.className = "bg-amber-100 text-amber-900 text-xs font-semibold px-2.5 py-0.5 rounded-full border border-amber-300";
             phaseBadge.textContent = "Gas Phase (Variable v(V))";
-            vFormulaBadge.textContent = "v(V) = v₀(F_T / F_{T0})";
+            vFormulaBadge.textContent = "v(V) = v₀(N_T / N_{T0})";
             canvasFlowBadge.textContent = "Gas Phase (Variable v(V))";
 
             if (rxnType === '1st_order') {
-                formulaBox.innerHTML = "$$\\frac{dF_A}{dV} = -k_1 C_A, \\quad C_A = \\frac{F_A}{v(V)}, \\quad v(V) = v_0 \\frac{F_T(V)}{F_{T0}}$$";
+                formulaBox.innerHTML = "$$\\frac{dN_A}{dV} = -k_1 C_A, \\quad C_A = \\frac{N_A}{v(V)}, \\quad v(V) = v_0 \\frac{N_T(V)}{N_{T0}}$$";
             } else if (rxnType === '1st_reversible') {
-                formulaBox.innerHTML = "$$-r_A = k_1 \\left(C_A - \\frac{C_B^2}{K_c}\\right), \\quad C_j = \\frac{F_j}{v(V)}, \\quad v(V) = v_0 \\frac{F_T(V)}{F_{T0}}$$";
+                formulaBox.innerHTML = "$$-r_A = k_1 \\left(C_A - \\frac{C_B^2}{K_c}\\right), \\quad C_j = \\frac{N_j}{v(V)}, \\quad v(V) = v_0 \\frac{N_T(V)}{N_{T0}}$$";
             } else if (rxnType === '2nd_order') {
-                formulaBox.innerHTML = "$$\\frac{dF_A}{dV} = -k_1 C_A^2, \\quad C_A = \\frac{F_A}{v(V)}, \\quad v(V) = v_0 \\frac{F_T(V)}{F_{T0}}$$";
+                formulaBox.innerHTML = "$$\\frac{dN_A}{dV} = -k_1 C_A^2, \\quad C_A = \\frac{N_A}{v(V)}, \\quad v(V) = v_0 \\frac{N_T(V)}{N_{T0}}$$";
             } else if (rxnType === 'nth_order') {
-                formulaBox.innerHTML = "$$\\frac{dF_A}{dV} = -k_1 C_A^n, \\quad C_A = \\frac{F_A}{v(V)}, \\quad v(V) = v_0 \\frac{F_T(V)}{F_{T0}}$$";
+                formulaBox.innerHTML = "$$\\frac{dN_A}{dV} = -k_1 C_A^n, \\quad C_A = \\frac{N_A}{v(V)}, \\quad v(V) = v_0 \\frac{N_T(V)}{N_{T0}}$$";
             } else if (rxnType === 'series') {
-                formulaBox.innerHTML = "$$\\frac{dF_A}{dV} = -k_1 C_A, \\quad \\frac{dF_B}{dV} = 2 k_1 C_A - k_2 C_B, \\quad v(V) = v_0 \\frac{F_T(V)}{F_{T0}}$$";
+                formulaBox.innerHTML = "$$\\frac{dN_A}{dV} = -k_1 C_A, \\quad \\frac{dN_B}{dV} = 2 k_1 C_A - k_2 C_B, \\quad v(V) = v_0 \\frac{N_T(V)}{N_{T0}}$$";
             } else if (rxnType === 'parallel') {
-                formulaBox.innerHTML = "$$\\frac{dF_A}{dV} = -k_1 C_A - k_2 C_A, \\quad \\frac{dF_B}{dV} = 2 k_1 C_A, \\quad v(V) = v_0 \\frac{F_T(V)}{F_{T0}}$$";
+                formulaBox.innerHTML = "$$\\frac{dN_A}{dV} = -k_1 C_A - k_2 C_A, \\quad \\frac{dN_B}{dV} = 2 k_1 C_A, \\quad v(V) = v_0 \\frac{N_T(V)}{N_{T0}}$$";
             }
         }
 
         if (window.MathJax && MathJax.typesetPromise) {
-            MathJax.typesetPromise([formulaBox, phaseBadge, vFormulaBadge]);
+            MathJax.typesetPromise([formulaBox, phaseBadge, vFormulaBadge]).catch(e => console.log(e));
         }
 
         document.getElementById('kValueDisplay').textContent = `k₁ = ${k1 < 0.001 ? k1.toExponential(3) : k1.toFixed(4)}`;
@@ -818,98 +813,44 @@
         updateChartData();
     }
 
+    function updateKPIs() {
+        if (!simResults || simResults.length === 0) return;
+
+        // Find nearest step result to probe location
+        let probeRes = simResults[0];
+        let minDiff = Math.abs(simResults[0].V - vProbe);
+        for (let i = 1; i < simResults.length; i++) {
+            const diff = Math.abs(simResults[i].V - vProbe);
+            if (diff < minDiff) {
+                minDiff = diff;
+                probeRes = simResults[i];
+            }
+        }
+
+        const exitRes = simResults[simResults.length - 1];
+
+        // Update spatial probe KPI panel values
+        document.getElementById('kpiProbeV').textContent = vProbe.toFixed(0);
+        document.getElementById('probeValue').textContent = vProbe.toFixed(0);
+        document.getElementById('probePct').textContent = Math.round((vProbe / vTotal) * 100);
+        document.getElementById('kpiProbeXA').textContent = (probeRes.XA * 100).toFixed(1);
+        document.getElementById('exitXA').textContent = (exitRes.XA * 100).toFixed(1);
+        document.getElementById('inletV0').textContent = v0.toFixed(1);
+        document.getElementById('kpiProbeVflow').textContent = probeRes.vFlow.toFixed(1);
+        document.getElementById('kpiProbeCA').textContent = probeRes.CA.toFixed(3);
+        document.getElementById('kpiProbeCB').textContent = probeRes.CB.toFixed(3);
+        document.getElementById('kpiProbeCC').textContent = probeRes.CC.toFixed(3);
+        document.getElementById('kpiProbeTau').textContent = probeRes.tau.toFixed(1);
+    }
+
     function onProbeChange() {
         vProbe = parseFloat(document.getElementById('probeInput').value);
         updateKPIs();
         updateChartData();
     }
 
-    function setPlotMode(mode) {
-        plotMode = mode;
-        const bConc = document.getElementById('btnViewConc');
-        const bConv = document.getElementById('btnViewConv');
-        const bFlow = document.getElementById('btnViewFlow');
-        const bSelect = document.getElementById('btnViewSelect');
-
-        [bConc, bConv, bFlow, bSelect].forEach(b => {
-            b.className = "px-2.5 py-1 rounded-md font-medium text-slate-600 hover:text-slate-900";
-        });
-
-        if (mode === 'conc') {
-            bConc.className = "px-2.5 py-1 rounded-md font-bold bg-white text-ttu-purple shadow-sm";
-        } else if (mode === 'conv') {
-            bConv.className = "px-2.5 py-1 rounded-md font-bold bg-white text-emerald-700 shadow-sm";
-        } else if (mode === 'flow') {
-            bFlow.className = "px-2.5 py-1 rounded-md font-bold bg-white text-amber-700 shadow-sm";
-        } else if (mode === 'selectivity') {
-            bSelect.className = "px-2.5 py-1 rounded-md font-bold bg-white text-teal-700 shadow-sm";
-        }
-
-        updateChartData();
-    }
-
-    function resetDefaults() {
-        document.getElementById('phaseSelect').value = 'liquid';
-        document.getElementById('rxnTypeSelect').value = '1st_order';
-        document.getElementById('ya0Input').value = 1.0;
-        document.getElementById('ca0Input').value = 2.0;
-        document.getElementById('v0Input').value = 10.0;
-        document.getElementById('nOrderInput').value = 1.5;
-        document.getElementById('tempInput').value = 350;
-        document.getElementById('eaInput').value = 40.0;
-        document.getElementById('freqInput').value = 5.5;
-        document.getElementById('kcInput').value = 1.5;
-        document.getElementById('ea2Input').value = 45.0;
-        document.getElementById('freq2Input').value = 5.2;
-        document.getElementById('vTotalInput').value = 500;
-        document.getElementById('probeInput').value = 250;
-
-        onReactionTypeChange();
-    }
-
-    // Initialize Chart.js graph
-    function initChart() {
-        const ctxChart = document.getElementById('pfrChart').getContext('2d');
-
-        pfrChart = new Chart(ctxChart, {
-            type: 'line',
-            data: {
-                labels: [],
-                datasets: []
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                animation: false,
-                interaction: { mode: 'index', intersect: false },
-                scales: {
-                    x: {
-                        title: { display: true, text: 'Reactor Volume V (L)', font: { weight: 'bold', size: 11 } },
-                        grid: { color: '#F1F5F9' }
-                    },
-                    y: {
-                        title: { display: true, text: 'Concentration (mol/L)', font: { weight: 'bold', size: 11 } },
-                        beginAtZero: true,
-                        grid: { color: '#F1F5F9' }
-                    }
-                },
-                plugins: {
-                    legend: { position: 'top', labels: { usePointStyle: true, font: { size: 10, weight: 'bold' } } },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                return `${context.dataset.label}: ${context.parsed.y !== null ? context.parsed.y.toFixed(3) : ''}`;
-                            }
-                        }
-                    }
-                }
-            }
-        });
-    }
-
-    // Update Chart Datasets
     function updateChartData() {
-        if (!pfrChart || simResults.length === 0) return;
+        if (!pfrChart || !simResults || simResults.length === 0) return;
 
         const labels = simResults.map(pt => pt.V.toFixed(0));
         const datasets = [];
@@ -976,7 +917,7 @@
             pfrChart.options.scales.y.title.text = 'Ratio / Yield';
 
             datasets.push({
-                label: 'Selectivity S_{B/C} (F_B / F_C)',
+                label: 'Selectivity S_{B/C} (N_B / N_C)',
                 data: simResults.map(pt => pt.selectivityBC),
                 borderColor: '#0284C7',
                 borderWidth: 2.5,
@@ -985,7 +926,7 @@
             });
 
             datasets.push({
-                label: 'Yield Y_B (F_B / 2 F_{A0})',
+                label: 'Yield Y_B (N_B / 2 N_{A0})',
                 data: simResults.map(pt => pt.yieldB),
                 borderColor: '#D97706',
                 borderWidth: 2.5,
@@ -999,14 +940,19 @@
         pfrChart.update('none');
     }
 
-    // HTML5 Canvas Rendering with Uniform Reactor Diameter
     function animationLoop() {
         renderPfrGraphic();
         requestAnimationFrame(animationLoop);
     }
 
     function renderPfrGraphic() {
-        if (!ctx) return;
+        if (!ctx || !pfrCanvas) return;
+
+        // Dynamic width scaling to container size
+        const container = pfrCanvas.parentElement;
+        if (container && pfrCanvas.width !== container.clientWidth) {
+            pfrCanvas.width = container.clientWidth || 340;
+        }
 
         const width = pfrCanvas.width;
         const height = pfrCanvas.height;
@@ -1017,10 +963,8 @@
         const tubeY = height / 2;
         const tubeLength = width - 2 * marginX;
 
-        // Uniform physical cross-section (straight cylindrical tube)
+        // Straight cylindrical vessel
         const hTube = 52;
-        const hInlet = hTube;
-        const hOutlet = hTube;
 
         const xIn = marginX;
         const xOut = marginX + tubeLength;
@@ -1028,7 +972,7 @@
         const yTop = tubeY - hTube / 2;
         const yBot = tubeY + hTube / 2;
 
-        // 1. Uniform Tube Vessel Boundary
+        // 1. Vessel Outer Boundary
         ctx.beginPath();
         ctx.moveTo(xIn, yTop);
         ctx.lineTo(xOut, yTop);
@@ -1042,31 +986,33 @@
         ctx.lineWidth = 3;
         ctx.stroke();
 
-        // 2. Concentration Field
-        const numSegments = 40;
-        const segWidth = tubeLength / numSegments;
+        // 2. Spatial Gradient Visual Fill
+        if (simResults && simResults.length > 0) {
+            const numSegments = 40;
+            const segWidth = tubeLength / numSegments;
 
-        for (let i = 0; i < numSegments; i++) {
-            const segPct = i / numSegments;
-            const segX = xIn + segPct * tubeLength;
+            for (let i = 0; i < numSegments; i++) {
+                const segPct = i / numSegments;
+                const segX = xIn + segPct * tubeLength;
 
-            const trajIdx = Math.min(simResults.length - 1, Math.floor(segPct * simResults.length));
-            const res = simResults[trajIdx] || { CA: cA0, CB: 0, CC: 0 };
+                const trajIdx = Math.min(simResults.length - 1, Math.floor(segPct * simResults.length));
+                const res = simResults[trajIdx] || { CA: cA0, CB: 0, CC: 0 };
 
-            const totalC = res.CA + res.CB + res.CC;
-            const fracA = totalC > 0 ? res.CA / totalC : 1;
-            const fracB = totalC > 0 ? res.CB / totalC : 0;
-            const fracC = totalC > 0 ? res.CC / totalC : 0;
+                const totalC = res.CA + res.CB + res.CC;
+                const fracA = totalC > 0 ? res.CA / totalC : 1;
+                const fracB = totalC > 0 ? res.CB / totalC : 0;
+                const fracC = totalC > 0 ? res.CC / totalC : 0;
 
-            const rComp = Math.round(79 * fracA + 255 * fracB + 20 * fracC);
-            const gComp = Math.round(41 * fracA + 199 * fracB + 184 * fracC);
-            const bComp = Math.round(132 * fracA + 44 * fracB + 166 * fracC);
+                const rComp = Math.round(79 * fracA + 255 * fracB + 20 * fracC);
+                const gComp = Math.round(41 * fracA + 199 * fracB + 184 * fracC);
+                const bComp = Math.round(132 * fracA + 44 * fracB + 166 * fracC);
 
-            ctx.fillStyle = `rgba(${rComp}, ${gComp}, ${bComp}, 0.65)`;
-            ctx.fillRect(segX, yTop + 2, segWidth + 0.5, hTube - 4);
+                ctx.fillStyle = `rgba(${rComp}, ${gComp}, ${bComp}, 0.65)`;
+                ctx.fillRect(segX, yTop + 2, segWidth + 0.5, hTube - 4);
+            }
         }
 
-        // 3. Spatial Probe Marker
+        // 3. Spatial Probe Marker Line
         const probePct = vProbe / vTotal;
         const probeX = xIn + probePct * tubeLength;
 
@@ -1084,48 +1030,50 @@
         ctx.arc(probeX, yTop - 8, 4, 0, Math.PI * 2);
         ctx.fill();
 
-        // 4. Fluid Particle Animation (Flow velocity scales with local v(V))
-        particles.forEach((p, idx) => {
-            const trajIdx = Math.min(simResults.length - 1, Math.floor(p.xPct * simResults.length));
-            const res = simResults[trajIdx] || { vFlow: v0, CA: cA0, CB: 0, CC: 0 };
+        // 4. Fluid Particle Flow Animation
+        if (simResults && simResults.length > 0) {
+            particles.forEach((p, idx) => {
+                const trajIdx = Math.min(simResults.length - 1, Math.floor(p.xPct * simResults.length));
+                const res = simResults[trajIdx] || { vFlow: v0, CA: cA0, CB: 0, CC: 0 };
 
-            const speed = (res.vFlow / v0) * 0.005;
-            p.xPct += speed;
+                const speed = (res.vFlow / v0) * 0.005;
+                p.xPct += speed;
 
-            if (p.xPct > 1.0) {
-                p.xPct = 0;
-                p.yOffset = (Math.random() - 0.5) * 0.7;
-            }
+                if (p.xPct > 1.0) {
+                    p.xPct = 0;
+                    p.yOffset = (Math.random() - 0.5) * 0.7;
+                }
 
-            const pX = xIn + p.xPct * tubeLength;
-            const pY = tubeY + p.yOffset * (hTube - 12);
+                const pX = xIn + p.xPct * tubeLength;
+                const pY = tubeY + p.yOffset * (hTube - 12);
 
-            const totalC = res.CA + res.CB + res.CC;
-            const fracB = totalC > 0 ? res.CB / totalC : 0;
-            const fracC = totalC > 0 ? res.CC / totalC : 0;
+                const totalC = res.CA + res.CB + res.CC;
+                const fracB = totalC > 0 ? res.CB / totalC : 0;
+                const fracC = totalC > 0 ? res.CC / totalC : 0;
 
-            const randVal = (idx / NUM_PARTICLES);
-            let pColor = '#4F2984'; // Reactant A
-            let pBorder = '#FFFFFF';
+                const randVal = (idx / NUM_PARTICLES);
+                let pColor = '#4F2984'; // Reactant A
+                let pBorder = '#FFFFFF';
 
-            if (randVal < fracB) {
-                pColor = '#FFC72C'; // Product B
-                pBorder = '#B45309';
-            } else if (randVal < (fracB + fracC)) {
-                pColor = '#14B8A6'; // Product C
-                pBorder = '#0F766E';
-            }
+                if (randVal < fracB) {
+                    pColor = '#FFC72C'; // Product B
+                    pBorder = '#B45309';
+                } else if (randVal < (fracB + fracC)) {
+                    pColor = '#14B8A6'; // Product C
+                    pBorder = '#0F766E';
+                }
 
-            ctx.beginPath();
-            ctx.arc(pX, pY, p.radius, 0, Math.PI * 2);
-            ctx.fillStyle = pColor;
-            ctx.strokeStyle = pBorder;
-            ctx.lineWidth = 1;
-            ctx.fill();
-            ctx.stroke();
-        });
+                ctx.beginPath();
+                ctx.arc(pX, pY, p.radius, 0, Math.PI * 2);
+                ctx.fillStyle = pColor;
+                ctx.strokeStyle = pBorder;
+                ctx.lineWidth = 1;
+                ctx.fill();
+                ctx.stroke();
+            });
+        }
 
-        // 5. Flow Annotations
+        // 5. Stream Labels & Flow Direction
         ctx.fillStyle = '#334155';
         ctx.font = 'bold 10px sans-serif';
         ctx.textAlign = 'center';
@@ -1135,28 +1083,6 @@
 
         drawArrow(ctx, 5, tubeY, xIn - 5, tubeY, '#4F2984');
         drawArrow(ctx, xOut + 5, tubeY, width - 5, tubeY, '#D97706');
-    }
-
-    function drawArrow(ctx, fromx, fromy, tox, toy, color) {
-        const headlen = 8;
-        const dx = tox - fromx;
-        const dy = toy - fromy;
-        const angle = Math.atan2(dy, dx);
-        ctx.strokeStyle = color;
-        ctx.fillStyle = color;
-        ctx.lineWidth = 2;
-
-        ctx.beginPath();
-        ctx.moveTo(fromx, fromy);
-        ctx.lineTo(tox, toy);
-        ctx.stroke();
-
-        ctx.beginPath();
-        ctx.moveTo(tox, toy);
-        ctx.lineTo(tox - headlen * Math.cos(angle - Math.PI / 6), toy - headlen * Math.sin(angle - Math.PI / 6));
-        ctx.lineTo(tox - headlen * Math.cos(angle + Math.PI / 6), toy - headlen * Math.sin(angle + Math.PI / 6));
-        ctx.closePath();
-        ctx.fill();
     }
 </script>
 </body>
