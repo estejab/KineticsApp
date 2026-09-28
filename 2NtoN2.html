@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>N₂ dissociation and recombination: BEP explorer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#F4F6F8;--panel:#FFFFFF;--ink:#17212B;--muted:#5A6672;--line:#D5DBE1;--diss:#17866A;--rec:#C24E28;--grid:#E6EAEE}
+@media (prefers-color-scheme:dark){:root{--bg:#12171C;--panel:#1A2128;--ink:#E4E9EE;--muted:#9AA6B2;--line:#34404B;--diss:#3CC29C;--rec:#F07A52;--grid:#26303A}}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:"Source Sans 3","Segoe UI",Helvetica,Arial,sans-serif;line-height:1.55}
+main{max-width:780px;margin:0 auto;padding:2rem 1.25rem 3rem;padding-top:calc(2rem + env(safe-area-inset-top,0px))}
+h1{font-size:1.7rem;font-weight:600;margin:0 0 .4rem;line-height:1.2}
+.lede{color:var(--muted);margin:0 0 1.5rem;max-width:66ch}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:1rem 1.1rem;margin-bottom:1rem}
+svg{width:100%;height:auto;display:block}
+svg text{font-family:inherit;fill:var(--ink);font-size:13px}
+svg .m{fill:var(--muted);font-size:12px}
+.controls{display:grid;grid-template-columns:140px minmax(0,1fr) 70px;gap:.6rem 1rem;align-items:center}
+.controls label{color:var(--muted)}
+.controls output{text-align:right;font-weight:600;font-variant-numeric:tabular-nums}
+input[type=range]{width:100%;accent-color:var(--diss)}
+input[type=range]:focus-visible{outline:2px solid var(--diss);outline-offset:3px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:.75rem;margin:1rem 0}
+.stat{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:.8rem 1rem}
+.stat span{display:block;color:var(--muted);font-size:.9rem}
+.stat b{font-size:1.6rem;font-weight:600;font-variant-numeric:tabular-nums}
+#msg{color:var(--muted);margin:.25rem 0 1rem}
+.note{color:var(--muted);font-size:.9rem;margin-top:1.5rem;max-width:66ch}
+@media (max-width:520px){.controls{grid-template-columns:1fr 64px}.controls label{grid-column:1/-1;margin-bottom:-.4rem}}
+</style>
+</head>
+<body>
+<main>
+<h1>N₂ dissociation and recombination: BEP explorer</h1>
+<p class="lede">Adjust the nitrogen binding strength and the Brønsted–Evans–Polanyi parameters to see how the transition state and both barriers respond. The transition-state energy relative to N₂ gas is E<sub>TS</sub> = α·ΔE + β, where ΔE ≈ 2E<sub>N</sub>.</p>
+
+<div class="panel">
+<svg viewBox="0 0 680 430" role="img" aria-label="Energy profile from N2 gas through the transition state to two adsorbed N atoms">
+<defs><marker id="ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+<line x1="40" y1="30" x2="40" y2="395" stroke="var(--line)"/>
+<text class="m" x="48" y="24">Energy (eV)</text>
+<text class="m" x="340" y="420" text-anchor="middle">Reaction coordinate (N₂ gas → 2 N*)</text>
+<line id="zline" x1="40" x2="640" stroke="var(--grid)"/>
+<line id="tsline" x1="90" x2="620" stroke="var(--muted)" stroke-width="0.7" stroke-dasharray="4 4"/>
+<path id="curve" fill="none" stroke="var(--ink)" stroke-width="2.2"/>
+<line id="adiss" x1="100" x2="100" stroke="var(--diss)" stroke-width="1.8" marker-end="url(#ah)"/>
+<line id="arec" x1="600" x2="600" stroke="var(--rec)" stroke-width="1.8" marker-end="url(#ah)"/>
+<text id="ldiss" x="108" style="fill:var(--diss)">Ea (diss)</text>
+<text id="lrec" x="592" text-anchor="end" style="fill:var(--rec)">Ea (rec)</text>
+<text id="lts" x="340" text-anchor="middle" style="font-weight:600">Transition state</text>
+<text id="lgas" x="85" text-anchor="middle">N₂ (gas)</text>
+<text id="lads" x="595" text-anchor="middle">2 N*</text>
+</svg>
+</div>
+
+<div class="panel controls">
+<label for="de">ΔE (binding)</label><input type="range" id="de" min="-3" max="1" step="0.1" value="-1"><output id="ode"></output>
+<label for="al">α (slope)</label><input type="range" id="al" min="0" max="1" step="0.05" value="0.9"><output id="oal"></output>
+<label for="be">β (intercept)</label><input type="range" id="be" min="0" max="3" step="0.1" value="1.5"><output id="obe"></output>
+</div>
+
+<div class="stats">
+<div class="stat"><span>Transition state energy</span><b id="vts"></b></div>
+<div class="stat"><span>Dissociation barrier</span><b id="vd" style="color:var(--diss)"></b></div>
+<div class="stat"><span>Recombination barrier</span><b id="vr" style="color:var(--rec)"></b></div>
+</div>
+<p id="msg"></p>
+
+<div class="panel">
+<svg viewBox="0 0 680 280" role="img" aria-label="Dissociation and recombination barriers as functions of reaction energy">
+<line x1="70" y1="30" x2="70" y2="230" stroke="var(--line)"/>
+<line x1="70" y1="230" x2="630" y2="230" stroke="var(--line)"/>
+<line x1="70" y1="130" x2="630" y2="130" stroke="var(--grid)"/>
+<text class="m" x="78" y="24">Barrier (eV)</text>
+<text class="m" x="62" y="234" text-anchor="end">0</text>
+<text class="m" x="62" y="134" text-anchor="end">3</text>
+<text class="m" x="62" y="38" text-anchor="end">6</text>
+<text class="m" x="70" y="250" text-anchor="middle">−3</text>
+<text class="m" x="350" y="250" text-anchor="middle">−1</text>
+<text class="m" x="630" y="250" text-anchor="middle">1</text>
+<text class="m" x="350" y="272" text-anchor="middle">ΔE = 2E_N (eV); stronger binding to the left</text>
+<path id="pd" fill="none" stroke="var(--diss)" stroke-width="2.2"/>
+<path id="pr" fill="none" stroke="var(--rec)" stroke-width="2.2" stroke-dasharray="6 4"/>
+<line id="cur" y1="30" y2="230" stroke="var(--muted)" stroke-width="0.7" stroke-dasharray="3 3"/>
+<circle id="cd" r="5" fill="var(--diss)"/><circle id="cr" r="5" fill="var(--rec)"/>
+<line x1="470" y1="44" x2="500" y2="44" stroke="var(--diss)" stroke-width="2.2"/><text x="506" y="48">Dissociation</text>
+<line x1="470" y1="64" x2="500" y2="64" stroke="var(--rec)" stroke-width="2.2" stroke-dasharray="6 4"/><text x="506" y="68">Recombination</text>
+</svg>
+</div>
+
+<p class="note">Default values (α = 0.9, β = 1.5 eV) are illustrative. For quantitative work, fit α and β from NEB calculations on the relevant site type (e.g., step sites). Barriers are clipped at zero, since an activation energy cannot be negative.</p>
+</main>
+<script>
+function $(i){return document.getElementById(i)}
+function Y(e){return 50+(4.5-e)*(340/8)}
+function tsE(de,al,be){var t=al*de+be,lo=Math.max(0,de);return t<lo?lo:t}
+function PX(d){return 70+(d+3)*140}
+function PY(b){b=Math.max(0,Math.min(6,b));return 230-b*(200/6)}
+function draw(){
+var de=+$('de').value,al=+$('al').value,be=+$('be').value;
+$('ode').textContent=de.toFixed(1)+' eV';$('oal').textContent=al.toFixed(2);$('obe').textContent=be.toFixed(1)+' eV';
+var ts=tsE(de,al,be),y0=Y(0),yT=Y(ts),yR=Y(de);
+$('curve').setAttribute('d','M50 '+y0+' L130 '+y0+' C230 '+y0+',280 '+yT+',340 '+yT+' C400 '+yT+',450 '+yR+',550 '+yR+' L640 '+yR);
+$('zline').setAttribute('y1',y0);$('zline').setAttribute('y2',y0);
+$('tsline').setAttribute('y1',yT);$('tsline').setAttribute('y2',yT);
+$('adiss').setAttribute('y1',y0);$('adiss').setAttribute('y2',yT+4);$('adiss').style.opacity=ts>0.08?1:0;
+$('arec').setAttribute('y1',yR);$('arec').setAttribute('y2',yT+4);$('arec').style.opacity=ts-de>0.08?1:0;
+$('ldiss').setAttribute('y',(y0+yT)/2+4);$('lrec').setAttribute('y',(yR+yT)/2+4);
+$('lts').setAttribute('y',yT-12);$('lgas').setAttribute('y',y0+22);$('lads').setAttribute('y',yR+22);
+var ed=ts,er=ts-de;
+$('vts').textContent=ts.toFixed(2)+' eV';$('vd').textContent=ed.toFixed(2)+' eV';$('vr').textContent=er.toFixed(2)+' eV';
+var m=al>0.75?'Late transition state (α near 1): the TS follows 2 N* closely, so binding strength mostly changes the dissociation barrier.':(al<0.25?'Early transition state (α near 0): the TS barely moves, so binding strength mostly changes the recombination barrier.':'Intermediate α: binding strength shifts both barriers noticeably.');
+m+=er>ed+0.3?' Recombination is currently the harder direction (poisoning side).':(ed>er+0.3?' Dissociation is currently the harder direction (weak-binding side).':' The two barriers are currently balanced.');
+$('msg').textContent=m;
+var sd='',sr='';
+for(var i=0;i<=40;i++){var x=-3+i*0.1,T=tsE(x,al,be);sd+=(i?' L':'M')+PX(x).toFixed(1)+' '+PY(T).toFixed(1);sr+=(i?' L':'M')+PX(x).toFixed(1)+' '+PY(T-x).toFixed(1)}
+$('pd').setAttribute('d',sd);$('pr').setAttribute('d',sr);
+var cx=PX(de);$('cur').setAttribute('x1',cx);$('cur').setAttribute('x2',cx);
+$('cd').setAttribute('cx',cx);$('cd').setAttribute('cy',PY(ed));$('cr').setAttribute('cx',cx);$('cr').setAttribute('cy',PY(er));
+}
+['de','al','be'].forEach(function(i){$(i).addEventListener('input',draw)});
+draw();
+</script>
+</body>
+</html>
