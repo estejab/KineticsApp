@@ -69,10 +69,10 @@
                     <h1 class="font-bold text-lg leading-tight tracking-wide flex items-center gap-2">
                         Non-Isothermal Batch Kinetics Simulator
                         <span class="text-[10px] bg-amber-500/30 text-amber-200 border border-amber-400/40 px-2 py-0.5 rounded-full font-mono font-normal">
-                            Multi-Scheme Energy & Material Balances
+                            Thermodynamic State Enforcement
                         </span>
                     </h1>
-                    <p class="text-xs text-ttu-goldLight opacity-90">Department of Chemical and Biomolecular Engineering • Transient RK4 ODE Solver</p>
+                    <p class="text-xs text-ttu-goldLight opacity-90">Department of Chemical Engineering • Transient RK4 ODE Solver</p>
                 </div>
             </div>
             <div class="flex items-center space-x-2 text-xs bg-ttu-purpleDark/60 px-3 py-1.5 rounded-full border border-ttu-gold/40">
@@ -156,13 +156,28 @@
                         <span><i class="fa-solid fa-flask text-amber-600 mr-1"></i> Initial Charge Conditions</span>
                     </div>
 
+                    <!-- CA0 Input / Notice -->
                     <div>
                         <div class="flex justify-between items-center mb-1 text-xs">
-                            <label for="ca0Input" class="text-slate-700 font-medium">Initial Reactant Concentration ($C_{A0}$)</label>
+                            <label id="ca0Label" for="ca0Input" class="text-slate-700 font-medium">Initial Concentration ($C_{A0}$)</label>
                             <span class="font-mono text-slate-800 font-bold"><span id="ca0Value">2.00</span> mol/L</span>
                         </div>
                         <input type="range" id="ca0Input" min="0.5" max="5.0" value="2.0" step="0.1" 
                                class="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-amber-600"
+                               oninput="updateParams()">
+                        <div id="idealGasNotice" class="hidden text-[10px] text-amber-800 bg-amber-100 p-1.5 rounded mt-1 border border-amber-200">
+                            <i class="fa-solid fa-triangle-exclamation"></i> <strong>Constant Pressure Note:</strong> For an ideal gas at constant $P$ and $T_0$, initial concentration is strictly fixed by $C_{A0} = \frac{P}{R T_0}$. The slider below controls operating pressure!
+                        </div>
+                    </div>
+
+                    <!-- Pressure Control (Visible for Constant Pressure Ideal Gas) -->
+                    <div id="pressureContainer" class="hidden">
+                        <div class="flex justify-between items-center mb-1 text-xs">
+                            <label for="pressureInput" class="text-amber-900 font-bold">Operating Pressure ($P$)</label>
+                            <span class="font-mono text-amber-900 font-bold"><span id="pressureValue">1.00</span> atm</span>
+                        </div>
+                        <input type="range" id="pressureInput" min="0.2" max="5.0" value="1.0" step="0.1" 
+                               class="w-full h-1.5 bg-amber-200 rounded-lg appearance-none cursor-pointer accent-amber-600"
                                oninput="updateParams()">
                     </div>
 
@@ -178,7 +193,7 @@
 
                     <div>
                         <div class="flex justify-between items-center mb-1 text-xs">
-                            <label for="v0Input" class="text-slate-700 font-medium">Initial Volume ($V_0$)</label>
+                            <label id="v0Label" for="v0Input" class="text-slate-700 font-medium">Initial Volume ($V_0$)</label>
                             <span class="font-mono text-slate-800 font-bold"><span id="v0Value">100</span> L</span>
                         </div>
                         <input type="range" id="v0Input" min="10" max="500" value="100" step="10" 
@@ -193,7 +208,6 @@
                         <span><i class="fa-solid fa-atom text-blue-600 mr-1"></i> Kinetics & Heat Parameters</span>
                     </div>
 
-                    <!-- Order Control (Visible for n-th order) -->
                     <div id="nOrderContainer" class="hidden">
                         <div class="flex justify-between items-center mb-1 text-xs">
                             <label for="nOrderInput" class="text-slate-700 font-medium">Reaction Order ($n$)</label>
@@ -234,7 +248,6 @@
                                oninput="updateParams()">
                     </div>
 
-                    <!-- Reversible Equilibrium Constant Kc -->
                     <div id="reversibleContainer" class="hidden p-2 bg-purple-100/60 rounded border border-purple-200 mt-2">
                         <div class="flex justify-between items-center mb-1 text-xs">
                             <label for="kcInput" class="text-purple-900 font-bold">Equilibrium Constant ($K_c$)</label>
@@ -245,7 +258,6 @@
                                oninput="updateParams()">
                     </div>
 
-                    <!-- Secondary Reaction Controls (Series / Parallel) -->
                     <div id="secondaryRxnContainer" class="hidden p-2.5 bg-amber-100/50 rounded-lg border border-amber-200 space-y-2 mt-2">
                         <div class="font-bold text-amber-900 text-xs flex justify-between">
                             <span id="secondaryRxnLabel">Secondary Reaction (B → 3C)</span>
@@ -443,6 +455,7 @@
     let thermalMode = 'jacket';
 
     let cA0 = 2.0;
+    let systemPressure = 1.0;
     let t0 = 300.0;
     let v0 = 100.0;
     let nOrder = 1.5;
@@ -493,14 +506,8 @@
         if (rxnType === '1st_reversible') headerTitle.innerHTML = "Reaction: <strong>1st-Order Reversible ($A \\rightleftharpoons 2B$)</strong>";
         if (rxnType === '2nd_order') headerTitle.innerHTML = "Reaction: <strong>2nd-Order ($A \\rightarrow 2B$)</strong>";
         if (rxnType === 'nth_order') headerTitle.innerHTML = "Reaction: <strong>n-th Order ($A \\rightarrow 2B$)</strong>";
-        if (rxnType === 'series') {
-            headerTitle.innerHTML = "Reaction: <strong>Series ($A \\rightarrow 2B \\rightarrow 3C$)</strong>";
-            document.getElementById('secondaryRxnLabel').innerText = "Secondary Reaction (B → 3C)";
-        }
-        if (rxnType === 'parallel') {
-            headerTitle.innerHTML = "Reaction: <strong>Parallel ($A \\rightarrow 2B$ & $A \\rightarrow 3C$)</strong>";
-            document.getElementById('secondaryRxnLabel').innerText = "Secondary Reaction (A → 3C)";
-        }
+        if (rxnType === 'series') headerTitle.innerHTML = "Reaction: <strong>Series ($A \\rightarrow 2B \\rightarrow 3C$)</strong>";
+        if (rxnType === 'parallel') headerTitle.innerHTML = "Reaction: <strong>Parallel ($A \\rightarrow 2B$ & $A \\rightarrow 3C$)</strong>";
 
         updateParams();
     }
@@ -510,6 +517,7 @@
         thermalMode = document.getElementById('thermalModeSelect').value;
 
         cA0 = parseFloat(document.getElementById('ca0Input').value);
+        systemPressure = parseFloat(document.getElementById('pressureInput').value);
         t0 = parseFloat(document.getElementById('t0Input').value);
         v0 = parseFloat(document.getElementById('v0Input').value);
         nOrder = parseFloat(document.getElementById('nOrderInput').value);
@@ -522,7 +530,21 @@
         tJacket = parseFloat(document.getElementById('tjInput').value);
         uaVal = parseFloat(document.getElementById('uaInput').value);
 
-        document.getElementById('ca0Value').innerText = cA0.toFixed(2);
+        const isConstP = (energySystem === 'ideal_gas_const_p');
+
+        // Toggle UI elements based on thermodynamic system
+        document.getElementById('pressureContainer').classList.toggle('hidden', !isConstP);
+        document.getElementById('idealGasNotice').classList.toggle('hidden', !isConstP);
+        document.getElementById('ca0Input').parentElement.parentElement.classList.toggle('hidden', isConstP);
+        document.getElementById('v0Label').innerText = isConstP ? "Initial Charge Moles ($N_{A0}$ factor)" : "Initial Volume ($V_0$)";
+
+        if (isConstP) {
+            // For constant pressure ideal gas, C_A0 is strictly P / (R * T0)
+            cA0 = systemPressure / (R_GAS_L_ATM * t0);
+        }
+
+        document.getElementById('ca0Value').innerText = cA0.toFixed(3);
+        document.getElementById('pressureValue').innerText = systemPressure.toFixed(2);
         document.getElementById('t0Value').innerText = t0.toFixed(0);
         document.getElementById('v0Value').innerText = v0.toFixed(0);
         document.getElementById('nOrderValue').innerText = nOrder.toFixed(1);
@@ -561,14 +583,13 @@
 
         const A01 = 1.0e5;
         const A02 = 1.0e5;
-        const P0 = 1.0;
 
         for (let t = 0; t <= maxTime; t += dt) {
             let NT = NA + NB + NC;
             if (energySystem === 'incompressible' || energySystem === 'ideal_gas_const_v') {
                 V = v0;
             } else {
-                V = (NT * R_GAS_L_ATM * T) / P0;
+                V = (NT * R_GAS_L_ATM * T) / systemPressure;
             }
 
             let CA = NA / V;
@@ -579,13 +600,12 @@
 
             let deriv = (currNA, currNB, currNC, currT) => {
                 let currNT = currNA + currNB + currNC;
-                let currV = (energySystem === 'ideal_gas_const_p') ? (currNT * R_GAS_L_ATM * currT) / P0 : v0;
+                let currV = (energySystem === 'ideal_gas_const_p') ? (currNT * R_GAS_L_ATM * currT) / systemPressure : v0;
                 let currCA = currNA / currV;
                 let currCB = currNB / currV;
 
                 let k1 = A01 * Math.exp(-(eaKj * 1000) / (R_GAS * currT));
                 let r1 = 0.0;
-                let r2 = 0.0;
                 let heatGen = 0.0;
 
                 if (rxnType === '1st_order') {
@@ -604,19 +624,20 @@
                 } else if (rxnType === 'series') {
                     let k2 = A02 * Math.exp(-(ea2Kj * 1000) / (R_GAS * currT));
                     r1 = -k1 * currCA;
-                    r2 = -k2 * currCB; // B -> 3C
+                    let r2 = -k2 * currCB;
                     heatGen = (-dHKj * 1000) * (-r1 * currV) + (-dh2Kj * 1000) * (-r2 * currV);
                 } else if (rxnType === 'parallel') {
                     let k2 = A02 * Math.exp(-(ea2Kj * 1000) / (R_GAS * currT));
-                    r1 = -k1 * currCA; // to 2B
-                    let r1_b = -k2 * currCA; // to 3C
-                    let net_rA = r1 + r1_b;
+                    r1 = -k1 * currCA;
+                    let r1_b = -k2 * currCA;
                     heatGen = (-dHKj * 1000) * (-r1 * currV) + (-dh2Kj * 1000) * (-r1_b * currV);
                 }
 
                 let dNA_dt = 0, dNB_dt = 0, dNC_dt = 0;
 
                 if (rxnType === 'series') {
+                    let k2 = A02 * Math.exp(-(ea2Kj * 1000) / (R_GAS * currT));
+                    let r2 = -k2 * currCB;
                     dNA_dt = r1 * currV;
                     dNB_dt = (-2 * r1 - r2) * currV;
                     dNC_dt = (-3 * r2) * currV;
@@ -634,7 +655,6 @@
                 let Q_jacket = (thermalMode === 'jacket') ? (uaVal * (tJacket - currT) * 60.0) : 0.0;
                 let heatCapTotal = currNT * cpMolar;
                 let dT_dt = (Q_jacket + heatGen) / heatCapTotal;
-
                 if (thermalMode === 'isothermal') dT_dt = 0;
 
                 return { dNA_dt, dNB_dt, dNC_dt, dT_dt };
@@ -667,8 +687,8 @@
         document.getElementById('kpiProbeT').innerText = closest.t.toFixed(1);
         document.getElementById('kpiTemp').innerText = closest.T.toFixed(1);
         document.getElementById('kpiXA').innerText = (closest.XA * 100.0).toFixed(1);
-        document.getElementById('kpiCA').innerText = closest.CA.toFixed(2);
-        document.getElementById('kpiCC').innerText = (closest.NC / closest.V).toFixed(2);
+        document.getElementById('kpiCA').innerText = closest.CA.toFixed(3);
+        document.getElementById('kpiCC').innerText = (closest.NC / closest.V).toFixed(3);
         document.getElementById('kpiV').innerText = closest.V.toFixed(1);
     }
 
@@ -774,6 +794,7 @@
         document.getElementById('rxnTypeSelect').value = "1st_order";
         document.getElementById('energyBalanceSelect').value = "incompressible";
         document.getElementById('thermalModeSelect').value = "jacket";
+        document.getElementById('pressureInput').value = "1.0";
         onReactionTypeChange();
     }
 
