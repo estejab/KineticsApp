@@ -69,7 +69,7 @@
                     <h1 class="font-bold text-lg leading-tight tracking-wide flex items-center gap-2">
                         Non-Isothermal Batch Kinetics Simulator
                         <span class="text-[10px] bg-amber-500/30 text-amber-200 border border-amber-400/40 px-2 py-0.5 rounded-full font-mono font-normal">
-                            Thermodynamic State Enforcement
+                            Explicit Pressure Control & Thermodynamics
                         </span>
                     </h1>
                     <p class="text-xs text-ttu-goldLight opacity-90">Department of Chemical Engineering • Transient RK4 ODE Solver</p>
@@ -150,10 +150,21 @@
                     </div>
                 </div>
 
-                <!-- Initial Charge Conditions -->
+                <!-- Initial Charge & Pressure Conditions -->
                 <div class="p-3 bg-amber-50/60 border border-amber-200 rounded-lg space-y-3">
                     <div class="font-bold text-amber-900 text-xs uppercase tracking-wide flex justify-between items-center">
-                        <span><i class="fa-solid fa-flask text-amber-600 mr-1"></i> Initial Charge Conditions</span>
+                        <span><i class="fa-solid fa-flask text-amber-600 mr-1"></i> Initial Charge & Pressure</span>
+                    </div>
+
+                    <!-- Operating Pressure (Visible for Ideal Gas Systems) -->
+                    <div id="pressureContainer">
+                        <div class="flex justify-between items-center mb-1 text-xs">
+                            <label for="pressureInput" class="text-amber-900 font-bold">System / Operating Pressure ($P$)</label>
+                            <span class="font-mono text-amber-900 font-bold"><span id="pressureValue">1.00</span> atm</span>
+                        </div>
+                        <input type="range" id="pressureInput" min="0.2" max="5.0" value="1.0" step="0.1" 
+                               class="w-full h-1.5 bg-amber-200 rounded-lg appearance-none cursor-pointer accent-amber-600"
+                               oninput="updateParams()">
                     </div>
 
                     <!-- CA0 Input / Notice -->
@@ -166,19 +177,8 @@
                                class="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-amber-600"
                                oninput="updateParams()">
                         <div id="idealGasNotice" class="hidden text-[10px] text-amber-800 bg-amber-100 p-1.5 rounded mt-1 border border-amber-200">
-                            <i class="fa-solid fa-triangle-exclamation"></i> <strong>Constant Pressure Note:</strong> For an ideal gas at constant $P$ and $T_0$, initial concentration is strictly fixed by $C_{A0} = \frac{P}{R T_0}$. The slider below controls operating pressure!
+                            <i class="fa-solid fa-triangle-exclamation"></i> <strong>Constant Pressure Note:</strong> $C_{A0}$ is strictly governed by $P / (R T_0)$. Changing Pressure or Temperature directly dictates your starting concentration!
                         </div>
-                    </div>
-
-                    <!-- Pressure Control (Visible for Constant Pressure Ideal Gas) -->
-                    <div id="pressureContainer" class="hidden">
-                        <div class="flex justify-between items-center mb-1 text-xs">
-                            <label for="pressureInput" class="text-amber-900 font-bold">Operating Pressure ($P$)</label>
-                            <span class="font-mono text-amber-900 font-bold"><span id="pressureValue">1.00</span> atm</span>
-                        </div>
-                        <input type="range" id="pressureInput" min="0.2" max="5.0" value="1.0" step="0.1" 
-                               class="w-full h-1.5 bg-amber-200 rounded-lg appearance-none cursor-pointer accent-amber-600"
-                               oninput="updateParams()">
                     </div>
 
                     <div>
@@ -397,10 +397,15 @@
                             <span class="font-mono font-bold text-teal-700 text-sm"><span id="kpiCC">0.00</span> mol/L</span>
                         </div>
 
+                        <div class="flex justify-between items-center bg-blue-50 p-1.5 rounded-lg border border-blue-100">
+                            <span class="text-blue-800 font-semibold">System Pressure ($P$)</span>
+                            <span class="font-mono font-bold text-blue-700 text-sm"><span id="kpiP">1.00</span> atm</span>
+                        </div>
+
                         <div class="flex justify-between items-center bg-slate-50 p-1.5 rounded-lg border border-slate-100">
-                            <span class="text-slate-500 font-medium">Pressure / Volume</span>
+                            <span class="text-slate-500 font-medium">Reactor Volume ($V$)</span>
                             <span class="font-mono font-bold text-slate-700 text-xs">
-                                V = <span id="kpiV">100.0</span> L
+                                <span id="kpiV">100.0</span> L
                             </span>
                         </div>
                     </div>
@@ -531,9 +536,10 @@
         uaVal = parseFloat(document.getElementById('uaInput').value);
 
         const isConstP = (energySystem === 'ideal_gas_const_p');
+        const isIdealGas = (energySystem === 'ideal_gas_const_v' || isConstP);
 
-        // Toggle UI elements based on thermodynamic system
-        document.getElementById('pressureContainer').classList.toggle('hidden', !isConstP);
+        // Show/hide pressure and notice appropriately
+        document.getElementById('pressureContainer').classList.toggle('hidden', !isIdealGas);
         document.getElementById('idealGasNotice').classList.toggle('hidden', !isConstP);
         document.getElementById('ca0Input').parentElement.parentElement.classList.toggle('hidden', isConstP);
         document.getElementById('v0Label').innerText = isConstP ? "Initial Charge Moles ($N_{A0}$ factor)" : "Initial Volume ($V_0$)";
@@ -541,6 +547,9 @@
         if (isConstP) {
             // For constant pressure ideal gas, C_A0 is strictly P / (R * T0)
             cA0 = systemPressure / (R_GAS_L_ATM * t0);
+        } else if (energySystem === 'ideal_gas_const_v') {
+            // For constant volume ideal gas, pressure varies with temperature, initial P0 = CA0 * R * T0
+            systemPressure = cA0 * R_GAS_L_ATM * t0;
         }
 
         document.getElementById('ca0Value').innerText = cA0.toFixed(3);
@@ -586,17 +595,20 @@
 
         for (let t = 0; t <= maxTime; t += dt) {
             let NT = NA + NB + NC;
+            let currentP = systemPressure;
+
             if (energySystem === 'incompressible' || energySystem === 'ideal_gas_const_v') {
                 V = v0;
+                currentP = (NT * R_GAS_L_ATM * T) / v0; // Pressure rises with temperature for constant volume
             } else {
-                V = (NT * R_GAS_L_ATM * T) / systemPressure;
+                V = (NT * R_GAS_L_ATM * T) / systemPressure; // Volume expands at constant pressure
             }
 
             let CA = NA / V;
             let CB = NB / V;
             let XA = (cA0 * v0 - NA) / (cA0 * v0);
 
-            simResults.push({ t, NA, NB, NC, CA, CB, T, V, XA });
+            simResults.push({ t, NA, NB, NC, CA, CB, T, V, P: currentP, XA });
 
             let deriv = (currNA, currNB, currNC, currT) => {
                 let currNT = currNA + currNB + currNC;
@@ -689,6 +701,7 @@
         document.getElementById('kpiXA').innerText = (closest.XA * 100.0).toFixed(1);
         document.getElementById('kpiCA').innerText = closest.CA.toFixed(3);
         document.getElementById('kpiCC').innerText = (closest.NC / closest.V).toFixed(3);
+        document.getElementById('kpiP').innerText = closest.P.toFixed(2);
         document.getElementById('kpiV').innerText = closest.V.toFixed(1);
     }
 
