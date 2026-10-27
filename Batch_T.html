@@ -69,7 +69,7 @@
                     <h1 class="font-bold text-lg leading-tight tracking-wide flex items-center gap-2">
                         Non-Isothermal Batch Kinetics Simulator
                         <span class="text-[10px] bg-amber-500/30 text-amber-200 border border-amber-400/40 px-2 py-0.5 rounded-full font-mono font-normal">
-                            Explicit Pressure Control & Thermodynamics
+                            Rawlings & Ekerdt Energy Balances
                         </span>
                     </h1>
                     <p class="text-xs text-ttu-goldLight opacity-90">Department of Chemical Engineering • Transient RK4 ODE Solver</p>
@@ -140,13 +140,13 @@
                 <!-- Formula & Design Equation Box -->
                 <div class="bg-purple-50 p-3 rounded-lg border border-purple-200 text-xs">
                     <div class="text-ttu-purple font-bold mb-1 flex items-center justify-between">
-                        <span>Batch Reactor Governing Equations</span>
+                        <span>Rawlings & Ekerdt Energy Balance</span>
                         <span id="ebBadge" class="text-[10px] bg-purple-200 text-ttu-purple px-1.5 py-0.5 rounded font-mono font-semibold">
                             dU/dt = Q
                         </span>
                     </div>
-                    <div id="formulaBox" class="font-mono text-slate-800 text-center py-2 bg-white rounded border border-purple-100 shadow-inner overflow-x-auto min-h-[50px] flex items-center justify-center px-2">
-                        $$\frac{dN_A}{dt} = r_A V, \quad m C_v \frac{dT}{dt} = Q + (-\Delta H_{rxn})(-r_A V)$$
+                    <div id="formulaBox" class="font-mono text-slate-800 text-center py-2 bg-white rounded border border-purple-100 shadow-inner overflow-x-auto min-h-[60px] flex items-center justify-center px-2">
+                        <!-- Dynamically populated via MathJax -->
                     </div>
                 </div>
 
@@ -156,29 +156,29 @@
                         <span><i class="fa-solid fa-flask text-amber-600 mr-1"></i> Initial Charge & Pressure</span>
                     </div>
 
-                    <!-- Operating Pressure (Visible for Ideal Gas Systems) -->
+                    <!-- Operating Pressure (Visible & Managed based on System) -->
                     <div id="pressureContainer">
                         <div class="flex justify-between items-center mb-1 text-xs">
-                            <label for="pressureInput" class="text-amber-900 font-bold">System / Operating Pressure ($P$)</label>
+                            <label id="pressureLabel" for="pressureInput" class="text-amber-900 font-bold">System / Operating Pressure ($P$)</label>
                             <span class="font-mono text-amber-900 font-bold"><span id="pressureValue">1.00</span> atm</span>
                         </div>
                         <input type="range" id="pressureInput" min="0.2" max="5.0" value="1.0" step="0.1" 
                                class="w-full h-1.5 bg-amber-200 rounded-lg appearance-none cursor-pointer accent-amber-600"
                                oninput="updateParams()">
+                        <div id="pressureNotice" class="hidden text-[10px] text-amber-800 bg-amber-100 p-1.5 rounded mt-1 border border-amber-200">
+                            <i class="fa-solid fa-lock"></i> <strong>Fixed Operating Pressure:</strong> In Constant Pressure mode, $P$ is fixed externally. $C_{A0}$ is strictly constrained by $P / (R T_0)$.
+                        </div>
                     </div>
 
                     <!-- CA0 Input / Notice -->
-                    <div>
+                    <div id="ca0Container">
                         <div class="flex justify-between items-center mb-1 text-xs">
-                            <label id="ca0Label" for="ca0Input" class="text-slate-700 font-medium">Initial Concentration ($C_{A0}$)</label>
+                            <label for="ca0Input" class="text-slate-700 font-medium">Initial Concentration ($C_{A0}$)</label>
                             <span class="font-mono text-slate-800 font-bold"><span id="ca0Value">2.00</span> mol/L</span>
                         </div>
                         <input type="range" id="ca0Input" min="0.5" max="5.0" value="2.0" step="0.1" 
                                class="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-amber-600"
                                oninput="updateParams()">
-                        <div id="idealGasNotice" class="hidden text-[10px] text-amber-800 bg-amber-100 p-1.5 rounded mt-1 border border-amber-200">
-                            <i class="fa-solid fa-triangle-exclamation"></i> <strong>Constant Pressure Note:</strong> $C_{A0}$ is strictly governed by $P / (R T_0)$. Changing Pressure or Temperature directly dictates your starting concentration!
-                        </div>
                     </div>
 
                     <div>
@@ -538,17 +538,18 @@
         const isConstP = (energySystem === 'ideal_gas_const_p');
         const isIdealGas = (energySystem === 'ideal_gas_const_v' || isConstP);
 
-        // Show/hide pressure and notice appropriately
+        // Control UI visibility based on energy balance selection
         document.getElementById('pressureContainer').classList.toggle('hidden', !isIdealGas);
-        document.getElementById('idealGasNotice').classList.toggle('hidden', !isConstP);
-        document.getElementById('ca0Input').parentElement.parentElement.classList.toggle('hidden', isConstP);
+        document.getElementById('pressureNotice').classList.toggle('hidden', !isConstP);
+        document.getElementById('ca0Container').classList.toggle('hidden', isConstP);
         document.getElementById('v0Label').innerText = isConstP ? "Initial Charge Moles ($N_{A0}$ factor)" : "Initial Volume ($V_0$)";
 
+        // Lock/unlock pressure slider interaction if constant pressure
+        const pInput = document.getElementById('pressureInput');
         if (isConstP) {
-            // For constant pressure ideal gas, C_A0 is strictly P / (R * T0)
-            cA0 = systemPressure / (R_GAS_L_ATM * t0);
+            pInput.disabled = false; // student can set operating pressure
+            cA0 = systemPressure / (R_GAS_L_ATM * t0); // strictly locked by thermodynamic state
         } else if (energySystem === 'ideal_gas_const_v') {
-            // For constant volume ideal gas, pressure varies with temperature, initial P0 = CA0 * R * T0
             systemPressure = cA0 * R_GAS_L_ATM * t0;
         }
 
@@ -574,7 +575,20 @@
 
     function updateFormulaBox() {
         const box = document.getElementById('formulaBox');
-        let html = `$$\\frac{dN_A}{dt} = r_A V, \\quad m C_v \\frac{dT}{dt} = Q + \\sum (-\\Delta H_j)(-r_j V)$$`;
+        const badge = document.getElementById('ebBadge');
+        let html = "";
+
+        if (energySystem === 'incompressible') {
+            badge.innerText = "dU/dt = Q (Incompressible)";
+            html = `$$\\frac{dN_A}{dt} = r_A V, \\quad m C_v \\frac{dT}{dt} = Q + \\sum (-\\Delta H_j)(-r_j V)$$`;
+        } else if (energySystem === 'ideal_gas_const_v') {
+            badge.innerText = "dU/dt = Q (Constant Volume Gas)";
+            html = `$$\\frac{dN_A}{dt} = r_A V, \\quad N_T C_v \\frac{dT}{dt} = Q + \\sum (-\\Delta U_j)(-r_j V)$$`;
+        } else {
+            badge.innerText = "dH/dt = Q (Constant Pressure Gas)";
+            html = `$$\\frac{dN_A}{dt} = r_A V, \\quad N_T C_p \\frac{dT}{dt} = Q + \\sum (-\\Delta H_j)(-r_j V)$$`;
+        }
+
         box.innerHTML = html;
         if (window.MathJax) MathJax.typesetPromise([box]);
     }
@@ -599,9 +613,9 @@
 
             if (energySystem === 'incompressible' || energySystem === 'ideal_gas_const_v') {
                 V = v0;
-                currentP = (NT * R_GAS_L_ATM * T) / v0; // Pressure rises with temperature for constant volume
+                currentP = (NT * R_GAS_L_ATM * T) / v0;
             } else {
-                V = (NT * R_GAS_L_ATM * T) / systemPressure; // Volume expands at constant pressure
+                V = (NT * R_GAS_L_ATM * T) / systemPressure;
             }
 
             let CA = NA / V;
