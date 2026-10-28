@@ -156,10 +156,9 @@
                         <span><i class="fa-solid fa-flask text-amber-600 mr-1"></i> Initial Charge & Pressure</span>
                     </div>
 
-                    <!-- Operating Pressure (Visible & Managed based on System) -->
                     <div id="pressureContainer">
                         <div class="flex justify-between items-center mb-1 text-xs">
-                            <label id="pressureLabel" for="pressureInput" class="text-amber-900 font-bold">System / Operating Pressure ($P$)</label>
+                            <label for="pressureInput" class="text-amber-900 font-bold">System / Operating Pressure ($P$)</label>
                             <span class="font-mono text-amber-900 font-bold"><span id="pressureValue">1.00</span> atm</span>
                         </div>
                         <input type="range" id="pressureInput" min="0.2" max="5.0" value="1.0" step="0.1" 
@@ -170,7 +169,6 @@
                         </div>
                     </div>
 
-                    <!-- CA0 Input / Notice -->
                     <div id="ca0Container">
                         <div class="flex justify-between items-center mb-1 text-xs">
                             <label for="ca0Input" class="text-slate-700 font-medium">Initial Concentration ($C_{A0}$)</label>
@@ -538,17 +536,13 @@
         const isConstP = (energySystem === 'ideal_gas_const_p');
         const isIdealGas = (energySystem === 'ideal_gas_const_v' || isConstP);
 
-        // Control UI visibility based on energy balance selection
         document.getElementById('pressureContainer').classList.toggle('hidden', !isIdealGas);
         document.getElementById('pressureNotice').classList.toggle('hidden', !isConstP);
         document.getElementById('ca0Container').classList.toggle('hidden', isConstP);
-        document.getElementById('v0Label').innerText = isConstP ? "Initial Charge Moles ($N_{A0}$ factor)" : "Initial Volume ($V_0$)";
+        document.getElementById('v0Label').innerText = isConstP ? "Initial Charge Moles ($n_{A0}$ factor)" : "Initial Volume ($V_0$)";
 
-        // Lock/unlock pressure slider interaction if constant pressure
-        const pInput = document.getElementById('pressureInput');
         if (isConstP) {
-            pInput.disabled = false; // student can set operating pressure
-            cA0 = systemPressure / (R_GAS_L_ATM * t0); // strictly locked by thermodynamic state
+            cA0 = systemPressure / (R_GAS_L_ATM * t0);
         } else if (energySystem === 'ideal_gas_const_v') {
             systemPressure = cA0 * R_GAS_L_ATM * t0;
         }
@@ -580,13 +574,13 @@
 
         if (energySystem === 'incompressible') {
             badge.innerText = "dU/dt = Q (Incompressible)";
-            html = `$$\\frac{dN_A}{dt} = r_A V, \\quad m C_v \\frac{dT}{dt} = Q + \\sum (-\\Delta H_j)(-r_j V)$$`;
+            html = `$$\\frac{dn_A}{dt} = r_A V, \\quad m C_v \\frac{dT}{dt} = Q + \\sum (-\\Delta H_j)(-r_j V)$$`;
         } else if (energySystem === 'ideal_gas_const_v') {
             badge.innerText = "dU/dt = Q (Constant Volume Gas)";
-            html = `$$\\frac{dN_A}{dt} = r_A V, \\quad N_T C_v \\frac{dT}{dt} = Q + \\sum (-\\Delta U_j)(-r_j V)$$`;
+            html = `$$\\frac{dn_A}{dt} = r_A V, \\quad n_T C_v \\frac{dT}{dt} = Q + \\sum (-\\Delta U_j)(-r_j V)$$`;
         } else {
             badge.innerText = "dH/dt = Q (Constant Pressure Gas)";
-            html = `$$\\frac{dN_A}{dt} = r_A V, \\quad N_T C_p \\frac{dT}{dt} = Q + \\sum (-\\Delta H_j)(-r_j V)$$`;
+            html = `$$\\frac{dn_A}{dt} = r_A V, \\quad n_T C_p \\frac{dT}{dt} = Q + \\sum (-\\Delta H_j)(-r_j V)$$`;
         }
 
         box.innerHTML = html;
@@ -598,31 +592,33 @@
         const dt = 0.1;
         const maxTime = 60.0;
 
-        let NA = cA0 * v0;
-        let NB = 0.0;
-        let NC = 0.0;
+        let nA = cA0 * v0;
+        let nB = 0.0;
+        let nC = 0.0;
         let T = t0;
         let V = v0;
 
         const A01 = 1.0e5;
         const A02 = 1.0e5;
+        const nA_initial = nA;
 
         for (let t = 0; t <= maxTime; t += dt) {
-            let NT = NA + NB + NC;
+            let nT = nA + nB + nC;
             let currentP = systemPressure;
 
             if (energySystem === 'incompressible' || energySystem === 'ideal_gas_const_v') {
                 V = v0;
-                currentP = (NT * R_GAS_L_ATM * T) / v0;
+                currentP = (nT * R_GAS_L_ATM * T) / v0;
             } else {
-                V = (NT * R_GAS_L_ATM * T) / systemPressure;
+                V = (nT * R_GAS_L_ATM * T) / systemPressure;
             }
 
-            let CA = NA / V;
-            let CB = NB / V;
-            let XA = (cA0 * v0 - NA) / (cA0 * v0);
+            let CA = nA / V;
+            let CB = nB / V;
+            // Bounded conversion strictly between 0 and 1
+            let XA = Math.max(0, Math.min(1, (nA_initial - nA) / nA_initial));
 
-            simResults.push({ t, NA, NB, NC, CA, CB, T, V, P: currentP, XA });
+            simResults.push({ t, nA, nB, nC, CA, CB, T, V, P: currentP, XA });
 
             let deriv = (currNA, currNB, currNC, currT) => {
                 let currNT = currNA + currNB + currNC;
@@ -659,23 +655,23 @@
                     heatGen = (-dHKj * 1000) * (-r1 * currV) + (-dh2Kj * 1000) * (-r1_b * currV);
                 }
 
-                let dNA_dt = 0, dNB_dt = 0, dNC_dt = 0;
+                let dna_dt = 0, dnb_dt = 0, dnc_dt = 0;
 
                 if (rxnType === 'series') {
                     let k2 = A02 * Math.exp(-(ea2Kj * 1000) / (R_GAS * currT));
                     let r2 = -k2 * currCB;
-                    dNA_dt = r1 * currV;
-                    dNB_dt = (-2 * r1 - r2) * currV;
-                    dNC_dt = (-3 * r2) * currV;
+                    dna_dt = r1 * currV;
+                    dnb_dt = (-2 * r1 - r2) * currV;
+                    dnc_dt = (-3 * r2) * currV;
                 } else if (rxnType === 'parallel') {
                     let k2 = A02 * Math.exp(-(ea2Kj * 1000) / (R_GAS * currT));
-                    dNA_dt = (-k1 * currCA - k2 * currCA) * currV;
-                    dNB_dt = (2 * k1 * currCA) * currV;
-                    dNC_dt = (3 * k2 * currCA) * currV;
+                    dna_dt = (-k1 * currCA - k2 * currCA) * currV;
+                    dnb_dt = (2 * k1 * currCA) * currV;
+                    dnc_dt = (3 * k2 * currCA) * currV;
                 } else {
-                    dNA_dt = r1 * currV;
-                    dNB_dt = -2 * r1 * currV;
-                    dNC_dt = 0;
+                    dna_dt = r1 * currV;
+                    dnb_dt = -2 * r1 * currV;
+                    dnc_dt = 0;
                 }
 
                 let Q_jacket = (thermalMode === 'jacket') ? (uaVal * (tJacket - currT) * 60.0) : 0.0;
@@ -683,17 +679,17 @@
                 let dT_dt = (Q_jacket + heatGen) / heatCapTotal;
                 if (thermalMode === 'isothermal') dT_dt = 0;
 
-                return { dNA_dt, dNB_dt, dNC_dt, dT_dt };
+                return { dna_dt, dnb_dt, dnc_dt, dT_dt };
             };
 
-            let k1_ = deriv(NA, NB, NC, T);
-            let k2_ = deriv(NA + 0.5 * dt * k1_.dNA_dt, NB + 0.5 * dt * k1_.dNB_dt, NC + 0.5 * dt * k1_.dNC_dt, T + 0.5 * dt * k1_.dT_dt);
-            let k3_ = deriv(NA + 0.5 * dt * k2_.dNA_dt, NB + 0.5 * dt * k2_.dNB_dt, NC + 0.5 * dt * k2_.dNC_dt, T + 0.5 * dt * k2_.dT_dt);
-            let k4_ = deriv(NA + dt * k3_.dNA_dt, NB + dt * k3_.dNB_dt, NC + dt * k3_.dNC_dt, T + dt * k3_.dT_dt);
+            let k1_ = deriv(nA, nB, nC, T);
+            let k2_ = deriv(nA + 0.5 * dt * k1_.dna_dt, nB + 0.5 * dt * k1_.dnb_dt, nC + 0.5 * dt * k1_.dnc_dt, T + 0.5 * dt * k1_.dT_dt);
+            let k3_ = deriv(nA + 0.5 * dt * k2_.dna_dt, nB + 0.5 * dt * k2_.dnb_dt, nC + 0.5 * dt * k2_.dnc_dt, T + 0.5 * dt * k2_.dT_dt);
+            let k4_ = deriv(nA + dt * k3_.dna_dt, nB + dt * k3_.dnb_dt, nC + dt * k3_.dnc_dt, T + dt * k3_.dT_dt);
 
-            NA += (dt / 6.0) * (k1_.dNA_dt + 2 * k2_.dNA_dt + 2 * k3_.dNA_dt + k4_.dNA_dt);
-            NB += (dt / 6.0) * (k1_.dNB_dt + 2 * k2_.dNB_dt + 2 * k3_.dNB_dt + k4_.dNB_dt);
-            NC += (dt / 6.0) * (k1_.dNC_dt + 2 * k2_.dNC_dt + 2 * k3_.dNC_dt + k4_.dNC_dt);
+            nA += (dt / 6.0) * (k1_.dna_dt + 2 * k2_.dna_dt + 2 * k3_.dna_dt + k4_.dna_dt);
+            nB += (dt / 6.0) * (k1_.dnb_dt + 2 * k2_.dnb_dt + 2 * k3_.dnb_dt + k4_.dnb_dt);
+            nC += (dt / 6.0) * (k1_.dnc_dt + 2 * k2_.dnc_dt + 2 * k3_.dnc_dt + k4_.dnc_dt);
             T += (dt / 6.0) * (k1_.dT_dt + 2 * k2_.dT_dt + 2 * k3_.dT_dt + k4_.dT_dt);
         }
     }
@@ -714,7 +710,7 @@
         document.getElementById('kpiTemp').innerText = closest.T.toFixed(1);
         document.getElementById('kpiXA').innerText = (closest.XA * 100.0).toFixed(1);
         document.getElementById('kpiCA').innerText = closest.CA.toFixed(3);
-        document.getElementById('kpiCC').innerText = (closest.NC / closest.V).toFixed(3);
+        document.getElementById('kpiCC').innerText = (closest.nC / closest.V).toFixed(3);
         document.getElementById('kpiP').innerText = closest.P.toFixed(2);
         document.getElementById('kpiV').innerText = closest.V.toFixed(1);
     }
@@ -785,7 +781,7 @@
             if (rxnType === 'series' || rxnType === 'parallel') {
                 datasets.push({
                     label: 'CC (mol/L)',
-                    data: simResults.map(r => r.NC / r.V),
+                    data: simResults.map(r => r.nC / r.V),
                     borderColor: '#10B981',
                     borderWidth: 2,
                     pointRadius: 0
@@ -803,8 +799,8 @@
             datasets.push({
                 label: 'Selectivity of B',
                 data: simResults.map(r => {
-                    let totalProd = r.NB + (r.NC || 0);
-                    return totalProd > 0 ? (r.NB / totalProd) * 100 : 0;
+                    let totalProd = r.nB + (r.nC || 0);
+                    return totalProd > 0 ? (r.nB / totalProd) * 100 : 0;
                 }),
                 borderColor: '#3B82F6',
                 borderWidth: 2,
