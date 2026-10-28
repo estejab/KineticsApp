@@ -69,7 +69,7 @@
                     <h1 class="font-bold text-lg leading-tight tracking-wide flex items-center gap-2">
                         Non-Isothermal Batch Kinetics Simulator
                         <span class="text-[10px] bg-amber-500/30 text-amber-200 border border-amber-400/40 px-2 py-0.5 rounded-full font-mono font-normal">
-                            Rawlings & Ekerdt Energy Balances
+                            Custom Stoichiometry ($aA \rightarrow bB$)
                         </span>
                     </h1>
                     <p class="text-xs text-ttu-goldLight opacity-90">Department of Chemical Engineering • Transient RK4 ODE Solver</p>
@@ -77,7 +77,7 @@
             </div>
             <div class="flex items-center space-x-2 text-xs bg-ttu-purpleDark/60 px-3 py-1.5 rounded-full border border-ttu-gold/40">
                 <i class="fa-solid fa-fire-flame-curved text-ttu-gold animate-pulse"></i>
-                <span id="headerRxnTitle">Reaction: <strong>1st-Order Irreversible ($A \rightarrow 2B$)</strong></span>
+                <span id="headerRxnTitle">Reaction: <strong>Custom Stoichiometry</strong></span>
             </div>
         </div>
     </header>
@@ -89,7 +89,7 @@
         <section class="lg:col-span-5 bg-white rounded-xl shadow-md border border-slate-200 flex flex-col overflow-hidden">
             <div class="bg-slate-50 border-b border-slate-200 px-4 py-3 flex items-center justify-between">
                 <h2 class="font-bold text-ttu-purple flex items-center gap-2">
-                    <i class="fa-solid fa-sliders"></i> Kinetic Scheme & Thermodynamics
+                    <i class="fa-solid fa-sliders"></i> Kinetic Scheme & Stoichiometry
                 </h2>
                 <span id="phaseBadge" class="bg-purple-100 text-ttu-purple text-xs font-semibold px-2.5 py-0.5 rounded-full border border-purple-300">
                     V = Constant (Liquid)
@@ -104,13 +104,34 @@
                         Select Reaction Kinetic Scheme
                     </label>
                     <select id="rxnTypeSelect" onchange="onReactionTypeChange()" class="w-full bg-slate-50 border border-slate-300 font-semibold text-ttu-purple rounded-lg p-2 focus:ring-2 focus:ring-ttu-purple focus:outline-none">
-                        <option value="1st_order" selected>1. A → 2B (1st Order Irreversible)</option>
-                        <option value="1st_reversible">2. A ⇌ 2B (1st Order Reversible)</option>
-                        <option value="2nd_order">3. A → 2B (2nd Order)</option>
-                        <option value="nth_order">4. A → 2B (n-th Order)</option>
-                        <option value="series">5. A → 2B and B → 3C (Series Reactions)</option>
-                        <option value="parallel">6. A → 2B and A → 3C (Parallel Reactions)</option>
+                        <option value="1st_order" selected>1. Irreversible ($aA \rightarrow bB$)</option>
+                        <option value="1st_reversible">2. Reversible ($aA \rightleftharpoons bB$)</option>
+                        <option value="2nd_order">3. 2nd-Order ($aA \rightarrow bB$)</option>
+                        <option value="nth_order">4. n-th Order ($aA \rightarrow bB$)</option>
+                        <option value="series">5. Series ($aA \rightarrow bB \rightarrow cC$)</option>
+                        <option value="parallel">6. Parallel ($aA \rightarrow bB$ & $aA \rightarrow cC$)</option>
                     </select>
+                </div>
+
+                <!-- Custom Stoichiometric Coefficients Inputs -->
+                <div class="p-3 bg-indigo-50/70 border border-indigo-200 rounded-lg space-y-2">
+                    <div class="font-bold text-indigo-900 text-xs uppercase tracking-wide">
+                        <i class="fa-solid fa-calculator text-indigo-600 mr-1"></i> Stoichiometric Coefficients ($aA \rightarrow bB$)
+                    </div>
+                    <div class="grid grid-cols-2 gap-3 text-xs">
+                        <div>
+                            <label for="coeffA" class="block font-medium text-slate-700 mb-1">Reactant Coeff ($a$):</label>
+                            <input type="number" id="coeffA" min="1" max="5" value="1" step="1" 
+                                   class="w-full bg-white border border-slate-300 font-mono font-bold text-ttu-purple rounded p-1.5 text-center focus:outline-none focus:ring-2 focus:ring-ttu-purple"
+                                   onchange="updateParams()">
+                        </div>
+                        <div>
+                            <label for="coeffB" class="block font-medium text-slate-700 mb-1">Product Coeff ($b$):</label>
+                            <input type="number" id="coeffB" min="1" max="5" value="2" step="1" 
+                                   class="w-full bg-white border border-slate-300 font-mono font-bold text-ttu-purple rounded p-1.5 text-center focus:outline-none focus:ring-2 focus:ring-ttu-purple"
+                                   onchange="updateParams()">
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Thermodynamic System State -->
@@ -258,7 +279,7 @@
 
                     <div id="secondaryRxnContainer" class="hidden p-2.5 bg-amber-100/50 rounded-lg border border-amber-200 space-y-2 mt-2">
                         <div class="font-bold text-amber-900 text-xs flex justify-between">
-                            <span id="secondaryRxnLabel">Secondary Reaction (B → 3C)</span>
+                            <span id="secondaryRxnLabel">Secondary Reaction</span>
                         </div>
                         <div>
                             <div class="flex justify-between items-center mb-1 text-xs">
@@ -431,7 +452,7 @@
                             Concentration $C_j(t)$
                         </button>
                         <button id="btnViewConv" onclick="setPlotMode('conv')" class="px-2.5 py-1 rounded-md font-medium text-slate-600 hover:text-slate-900">
-                            Conversion $X_A(t)$
+                            Conversion $X_A$ (%)
                         </button>
                         <button id="btnViewSelect" onclick="setPlotMode('selectivity')" class="hidden px-2.5 py-1 rounded-md font-medium text-slate-600 hover:text-slate-900">
                             Yield & Selectivity
@@ -471,6 +492,8 @@
     let tJacket = 320.0;
     let uaVal = 250.0;
     let tProbe = 25.0;
+    let aCoeff = 1;
+    let bCoeff = 2;
 
     let plotMode = 'temp';
     let simResults = [];
@@ -505,12 +528,12 @@
         document.getElementById('btnViewSelect').classList.toggle('hidden', rxnType !== 'series' && rxnType !== 'parallel');
 
         const headerTitle = document.getElementById('headerRxnTitle');
-        if (rxnType === '1st_order') headerTitle.innerHTML = "Reaction: <strong>1st-Order Irreversible ($A \\rightarrow 2B$)</strong>";
-        if (rxnType === '1st_reversible') headerTitle.innerHTML = "Reaction: <strong>1st-Order Reversible ($A \\rightleftharpoons 2B$)</strong>";
-        if (rxnType === '2nd_order') headerTitle.innerHTML = "Reaction: <strong>2nd-Order ($A \\rightarrow 2B$)</strong>";
-        if (rxnType === 'nth_order') headerTitle.innerHTML = "Reaction: <strong>n-th Order ($A \\rightarrow 2B$)</strong>";
-        if (rxnType === 'series') headerTitle.innerHTML = "Reaction: <strong>Series ($A \\rightarrow 2B \\rightarrow 3C$)</strong>";
-        if (rxnType === 'parallel') headerTitle.innerHTML = "Reaction: <strong>Parallel ($A \\rightarrow 2B$ & $A \\rightarrow 3C$)</strong>";
+        if (rxnType === '1st_order') headerTitle.innerHTML = "Reaction: <strong>Irreversible ($aA \\rightarrow bB$)</strong>";
+        if (rxnType === '1st_reversible') headerTitle.innerHTML = "Reaction: <strong>Reversible ($aA \\rightleftharpoons bB$)</strong>";
+        if (rxnType === '2nd_order') headerTitle.innerHTML = "Reaction: <strong>2nd-Order ($aA \\rightarrow bB$)</strong>";
+        if (rxnType === 'nth_order') headerTitle.innerHTML = "Reaction: <strong>n-th Order ($aA \\rightarrow bB$)</strong>";
+        if (rxnType === 'series') headerTitle.innerHTML = "Reaction: <strong>Series ($aA \\rightarrow bB \\rightarrow cC$)</strong>";
+        if (rxnType === 'parallel') headerTitle.innerHTML = "Reaction: <strong>Parallel ($aA \\rightarrow bB$ & $aA \\rightarrow cC$)</strong>";
 
         updateParams();
     }
@@ -532,6 +555,8 @@
         dh2Kj = parseFloat(document.getElementById('dh2Input').value);
         tJacket = parseFloat(document.getElementById('tjInput').value);
         uaVal = parseFloat(document.getElementById('uaInput').value);
+        aCoeff = parseInt(document.getElementById('coeffA').value) || 1;
+        bCoeff = parseInt(document.getElementById('coeffB').value) || 2;
 
         const isConstP = (energySystem === 'ideal_gas_const_p');
         const isIdealGas = (energySystem === 'ideal_gas_const_v' || isConstP);
@@ -574,13 +599,13 @@
 
         if (energySystem === 'incompressible') {
             badge.innerText = "dU/dt = Q (Incompressible)";
-            html = `$$\\frac{dn_A}{dt} = r_A V, \\quad m C_v \\frac{dT}{dt} = Q + \\sum (-\\Delta H_j)(-r_j V)$$`;
+            html = `$$\\frac{dn_A}{dt} = -a r_1 V, \\quad m C_v \\frac{dT}{dt} = Q + \\sum (-\\Delta H_j)(-r_j V)$$`;
         } else if (energySystem === 'ideal_gas_const_v') {
             badge.innerText = "dU/dt = Q (Constant Volume Gas)";
-            html = `$$\\frac{dn_A}{dt} = r_A V, \\quad n_T C_v \\frac{dT}{dt} = Q + \\sum (-\\Delta U_j)(-r_j V)$$`;
+            html = `$$\\frac{dn_A}{dt} = -a r_1 V, \\quad n_T C_v \\frac{dT}{dt} = Q + \\sum (-\\Delta U_j)(-r_j V)$$`;
         } else {
             badge.innerText = "dH/dt = Q (Constant Pressure Gas)";
-            html = `$$\\frac{dn_A}{dt} = r_A V, \\quad n_T C_p \\frac{dT}{dt} = Q + \\sum (-\\Delta H_j)(-r_j V)$$`;
+            html = `$$\\frac{dn_A}{dt} = -a r_1 V, \\quad n_T C_p \\frac{dT}{dt} = Q + \\sum (-\\Delta H_j)(-r_j V)$$`;
         }
 
         box.innerHTML = html;
@@ -613,9 +638,9 @@
                 V = (nT * R_GAS_L_ATM * T) / systemPressure;
             }
 
-            let CA = nA / V;
-            let CB = nB / V;
-            // Bounded conversion strictly between 0 and 1
+            let CA = Math.max(0, nA / V);
+            let CB = Math.max(0, nB / V);
+            // Strictly bounded conversion between 0 and 1 (0% to 100%)
             let XA = Math.max(0, Math.min(1, (nA_initial - nA) / nA_initial));
 
             simResults.push({ t, nA, nB, nC, CA, CB, T, V, P: currentP, XA });
@@ -623,54 +648,55 @@
             let deriv = (currNA, currNB, currNC, currT) => {
                 let currNT = currNA + currNB + currNC;
                 let currV = (energySystem === 'ideal_gas_const_p') ? (currNT * R_GAS_L_ATM * currT) / systemPressure : v0;
-                let currCA = currNA / currV;
-                let currCB = currNB / currV;
+                let currCA = Math.max(0, currNA / currV);
+                let currCB = Math.max(0, currNB / currV);
 
                 let k1 = A01 * Math.exp(-(eaKj * 1000) / (R_GAS * currT));
                 let r1 = 0.0;
                 let heatGen = 0.0;
 
                 if (rxnType === '1st_order') {
-                    r1 = -k1 * currCA;
-                    heatGen = (-dHKj * 1000) * (-r1 * currV);
+                    r1 = k1 * currCA;
+                    heatGen = (-dHKj * 1000) * (r1 * currV);
                 } else if (rxnType === '1st_reversible') {
                     let k_rev = k1 / kcEquil;
-                    r1 = -k1 * currCA + k_rev * currCB;
-                    heatGen = (-dHKj * 1000) * (-r1 * currV);
+                    r1 = k1 * currCA - k_rev * currCB;
+                    heatGen = (-dHKj * 1000) * (r1 * currV);
                 } else if (rxnType === '2nd_order') {
-                    r1 = -k1 * currCA * currCA;
-                    heatGen = (-dHKj * 1000) * (-r1 * currV);
+                    r1 = k1 * currCA * currCA;
+                    heatGen = (-dHKj * 1000) * (r1 * currV);
                 } else if (rxnType === 'nth_order') {
-                    r1 = -k1 * Math.pow(currCA, nOrder);
-                    heatGen = (-dHKj * 1000) * (-r1 * currV);
+                    r1 = k1 * Math.pow(currCA, nOrder);
+                    heatGen = (-dHKj * 1000) * (r1 * currV);
                 } else if (rxnType === 'series') {
                     let k2 = A02 * Math.exp(-(ea2Kj * 1000) / (R_GAS * currT));
-                    r1 = -k1 * currCA;
-                    let r2 = -k2 * currCB;
-                    heatGen = (-dHKj * 1000) * (-r1 * currV) + (-dh2Kj * 1000) * (-r2 * currV);
+                    r1 = k1 * currCA;
+                    let r2 = k2 * currCB;
+                    heatGen = (-dHKj * 1000) * (r1 * currV) + (-dh2Kj * 1000) * (r2 * currV);
                 } else if (rxnType === 'parallel') {
                     let k2 = A02 * Math.exp(-(ea2Kj * 1000) / (R_GAS * currT));
-                    r1 = -k1 * currCA;
-                    let r1_b = -k2 * currCA;
-                    heatGen = (-dHKj * 1000) * (-r1 * currV) + (-dh2Kj * 1000) * (-r1_b * currV);
+                    r1 = k1 * currCA;
+                    let r1_b = k2 * currCA;
+                    heatGen = (-dHKj * 1000) * (r1 * currV) + (-dh2Kj * 1000) * (r1_b * currV);
                 }
 
                 let dna_dt = 0, dnb_dt = 0, dnc_dt = 0;
 
                 if (rxnType === 'series') {
                     let k2 = A02 * Math.exp(-(ea2Kj * 1000) / (R_GAS * currT));
-                    let r2 = -k2 * currCB;
-                    dna_dt = r1 * currV;
-                    dnb_dt = (-2 * r1 - r2) * currV;
-                    dnc_dt = (-3 * r2) * currV;
+                    let r2 = k2 * currCB;
+                    dna_dt = -aCoeff * r1 * currV;
+                    dnb_dt = (bCoeff * r1 - r2) * currV;
+                    dnc_dt = (3 * r2) * currV;
                 } else if (rxnType === 'parallel') {
                     let k2 = A02 * Math.exp(-(ea2Kj * 1000) / (R_GAS * currT));
-                    dna_dt = (-k1 * currCA - k2 * currCA) * currV;
-                    dnb_dt = (2 * k1 * currCA) * currV;
-                    dnc_dt = (3 * k2 * currCA) * currV;
+                    let r1_b = k2 * currCA;
+                    dna_dt = -aCoeff * (r1 + r1_b) * currV;
+                    dnb_dt = bCoeff * r1 * currV;
+                    dnc_dt = 3 * r1_b * currV;
                 } else {
-                    dna_dt = r1 * currV;
-                    dnb_dt = -2 * r1 * currV;
+                    dna_dt = -aCoeff * r1 * currV;
+                    dnb_dt = bCoeff * r1 * currV;
                     dnc_dt = 0;
                 }
 
@@ -691,6 +717,8 @@
             nB += (dt / 6.0) * (k1_.dnb_dt + 2 * k2_.dnb_dt + 2 * k3_.dnb_dt + k4_.dnb_dt);
             nC += (dt / 6.0) * (k1_.dnc_dt + 2 * k2_.dnc_dt + 2 * k3_.dnc_dt + k4_.dnc_dt);
             T += (dt / 6.0) * (k1_.dT_dt + 2 * k2_.dT_dt + 2 * k3_.dT_dt + k4_.dT_dt);
+
+            nA = Math.max(0, nA);
         }
     }
 
@@ -742,7 +770,11 @@
                 animation: false,
                 scales: {
                     x: { title: { display: true, text: 'Time t (min)' } },
-                    y: { title: { display: true, text: 'Value' } }
+                    y: { 
+                        title: { display: true, text: 'Value' },
+                        min: 0,
+                        max: 100
+                    }
                 }
             }
         });
@@ -752,6 +784,17 @@
         if (!batchChart || !simResults.length) return;
         const labels = simResults.map(r => r.t.toFixed(1));
         let datasets = [];
+
+        // Configure y-axis limits depending on mode
+        if (plotMode === 'conv') {
+            batchChart.options.scales.y.min = 0;
+            batchChart.options.scales.y.max = 100;
+            batchChart.options.scales.y.title.text = 'Conversion XA (%)';
+        } else {
+            delete batchChart.options.scales.y.min;
+            delete batchChart.options.scales.y.max;
+            batchChart.options.scales.y.title.text = plotMode === 'temp' ? 'Temperature (K)' : (plotMode === 'conc' ? 'Concentration (mol/L)' : 'Value');
+        }
 
         if (plotMode === 'temp') {
             datasets.push({
@@ -797,7 +840,7 @@
             });
         } else if (plotMode === 'selectivity' && (rxnType === 'series' || rxnType === 'parallel')) {
             datasets.push({
-                label: 'Selectivity of B',
+                label: 'Selectivity of B (%)',
                 data: simResults.map(r => {
                     let totalProd = r.nB + (r.nC || 0);
                     return totalProd > 0 ? (r.nB / totalProd) * 100 : 0;
@@ -818,6 +861,8 @@
         document.getElementById('energyBalanceSelect').value = "incompressible";
         document.getElementById('thermalModeSelect').value = "jacket";
         document.getElementById('pressureInput').value = "1.0";
+        document.getElementById('coeffA').value = "1";
+        document.getElementById('coeffB').value = "2";
         onReactionTypeChange();
     }
 
