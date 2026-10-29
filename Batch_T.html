@@ -69,15 +69,15 @@
                     <h1 class="font-bold text-lg leading-tight tracking-wide flex items-center gap-2">
                         Non-Isothermal Batch Kinetics Simulator
                         <span class="text-[10px] bg-amber-500/30 text-amber-200 border border-amber-400/40 px-2 py-0.5 rounded-full font-mono font-normal">
-                            Custom Stoichiometry ($aA \rightarrow bB$)
+                            Rawlings & Ekerdt Text Equations
                         </span>
                     </h1>
-                    <p class="text-xs text-ttu-goldLight opacity-90">Department of Chemical Engineering • Transient RK4 ODE Solver</p>
+                    <p class="text-xs text-ttu-goldLight opacity-90">Chemical & Biomolecular Engineering Department • Transient RK4 ODE Solver</p>
                 </div>
             </div>
             <div class="flex items-center space-x-2 text-xs bg-ttu-purpleDark/60 px-3 py-1.5 rounded-full border border-ttu-gold/40">
                 <i class="fa-solid fa-fire-flame-curved text-ttu-gold animate-pulse"></i>
-                <span id="headerRxnTitle">Reaction: <strong>Custom Stoichiometry</strong></span>
+                <span id="headerRxnTitle">Reaction: <strong>$aA \rightarrow bB$</strong></span>
             </div>
         </div>
     </header>
@@ -92,7 +92,7 @@
                     <i class="fa-solid fa-sliders"></i> Kinetic Scheme & Stoichiometry
                 </h2>
                 <span id="phaseBadge" class="bg-purple-100 text-ttu-purple text-xs font-semibold px-2.5 py-0.5 rounded-full border border-purple-300">
-                    V = Constant (Liquid)
+                    Incompressible / Constant P
                 </span>
             </div>
 
@@ -116,7 +116,7 @@
                 <!-- Custom Stoichiometric Coefficients Inputs -->
                 <div class="p-3 bg-indigo-50/70 border border-indigo-200 rounded-lg space-y-2">
                     <div class="font-bold text-indigo-900 text-xs uppercase tracking-wide">
-                        <i class="fa-solid fa-calculator text-indigo-600 mr-1"></i> Stoichiometric Coefficients ($aA \rightarrow bB$)
+                        <i class="fa-solid fa-calculator text-indigo-600 mr-1"></i> Stoichiometry Coefficients ($aA \rightarrow bB$)
                     </div>
                     <div class="grid grid-cols-2 gap-3 text-xs">
                         <div>
@@ -134,15 +134,14 @@
                     </div>
                 </div>
 
-                <!-- Thermodynamic System State -->
+                <!-- Thermodynamic System State (Two Categories) -->
                 <div>
                     <label for="energyBalanceSelect" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
                         Thermodynamic System State
                     </label>
                     <select id="energyBalanceSelect" onchange="updateParams()" class="w-full bg-slate-50 border border-slate-300 font-semibold text-ttu-purple rounded-lg p-2 focus:ring-2 focus:ring-ttu-purple focus:outline-none">
-                        <option value="incompressible" selected>Incompressible Liquid (V = const, Cv ≈ Cp)</option>
-                        <option value="ideal_gas_const_v">Ideal Gas - Constant Volume (V = const)</option>
-                        <option value="ideal_gas_const_p">Ideal Gas - Constant Pressure (P = const, Expanding V)</option>
+                        <option value="incompressible" selected>Incompressible-fluid or constant-pressure reactor</option>
+                        <option value="ideal_gas_const_v">Constant-volume reactor, ideal gas</option>
                     </select>
                 </div>
 
@@ -153,8 +152,8 @@
                     </label>
                     <select id="thermalModeSelect" onchange="updateParams()" class="w-full bg-slate-50 border border-slate-300 font-semibold text-ttu-purple rounded-lg p-2 focus:ring-2 focus:ring-ttu-purple focus:outline-none">
                         <option value="jacket" selected>Jacketed Heat Exchanger (Non-Isothermal)</option>
-                        <option value="adiabatic">Adiabatic Operation (Q = 0)</option>
-                        <option value="isothermal">Isothermal Operation (T = T0)</option>
+                        <option value="adiabatic">Adiabatic Operation ($\dot{Q} = 0$)</option>
+                        <option value="isothermal">Isothermal Operation ($T = T_0$)</option>
                     </select>
                 </div>
 
@@ -163,7 +162,7 @@
                     <div class="text-ttu-purple font-bold mb-1 flex items-center justify-between">
                         <span>Rawlings & Ekerdt Energy Balance</span>
                         <span id="ebBadge" class="text-[10px] bg-purple-200 text-ttu-purple px-1.5 py-0.5 rounded font-mono font-semibold">
-                            dU/dt = Q
+                            Textbook Form
                         </span>
                     </div>
                     <div id="formulaBox" class="font-mono text-slate-800 text-center py-2 bg-white rounded border border-purple-100 shadow-inner overflow-x-auto min-h-[60px] flex items-center justify-center px-2">
@@ -177,7 +176,7 @@
                         <span><i class="fa-solid fa-flask text-amber-600 mr-1"></i> Initial Charge & Pressure</span>
                     </div>
 
-                    <div id="pressureContainer">
+                    <div id="pressureContainer" class="hidden">
                         <div class="flex justify-between items-center mb-1 text-xs">
                             <label for="pressureInput" class="text-amber-900 font-bold">System / Operating Pressure ($P$)</label>
                             <span class="font-mono text-amber-900 font-bold"><span id="pressureValue">1.00</span> atm</span>
@@ -185,9 +184,6 @@
                         <input type="range" id="pressureInput" min="0.2" max="5.0" value="1.0" step="0.1" 
                                class="w-full h-1.5 bg-amber-200 rounded-lg appearance-none cursor-pointer accent-amber-600"
                                oninput="updateParams()">
-                        <div id="pressureNotice" class="hidden text-[10px] text-amber-800 bg-amber-100 p-1.5 rounded mt-1 border border-amber-200">
-                            <i class="fa-solid fa-lock"></i> <strong>Fixed Operating Pressure:</strong> In Constant Pressure mode, $P$ is fixed externally. $C_{A0}$ is strictly constrained by $P / (R T_0)$.
-                        </div>
                     </div>
 
                     <div id="ca0Container">
@@ -212,7 +208,7 @@
 
                     <div>
                         <div class="flex justify-between items-center mb-1 text-xs">
-                            <label id="v0Label" for="v0Input" class="text-slate-700 font-medium">Initial Volume ($V_0$)</label>
+                            <label id="v0Label" for="v0Input" class="text-slate-700 font-medium">Reactor Volume ($V_R$)</label>
                             <span class="font-mono text-slate-800 font-bold"><span id="v0Value">100</span> L</span>
                         </div>
                         <input type="range" id="v0Input" min="10" max="500" value="100" step="10" 
@@ -221,7 +217,7 @@
                     </div>
                 </div>
 
-                <!-- Kinetics & Thermal Parameters Card -->
+                <!-- Kinetics & Heat Parameters Card -->
                 <div class="p-3 bg-blue-50/60 border border-blue-200 rounded-lg space-y-3">
                     <div class="font-bold text-blue-900 text-xs uppercase tracking-wide flex justify-between items-center">
                         <span><i class="fa-solid fa-atom text-blue-600 mr-1"></i> Kinetics & Heat Parameters</span>
@@ -249,7 +245,7 @@
 
                     <div>
                         <div class="flex justify-between items-center mb-1 text-xs">
-                            <label for="dhInput" class="text-slate-600">Heat of Reaction ($\Delta H_{rxn}$)</label>
+                            <label for="dhInput" class="text-slate-600">Heat of Reaction ($\Delta H_{R1}$)</label>
                             <span class="font-mono text-slate-700"><span id="dhValue">-75.0</span> kJ/mol</span>
                         </div>
                         <input type="range" id="dhInput" min="-150" max="50" value="-75" step="5" 
@@ -259,10 +255,10 @@
 
                     <div>
                         <div class="flex justify-between items-center mb-1 text-xs">
-                            <label for="cpInput" class="text-slate-600">Molar Heat Capacity ($C_p$)</label>
-                            <span class="font-mono text-slate-700"><span id="cpValue">75.0</span> J/mol·K</span>
+                            <label for="cpInput" class="text-slate-600">Mass Heat Capacity ($\hat{C}_P$ or $\hat{C}_V$)</label>
+                            <span class="font-mono text-slate-700"><span id="cpValue">4.18</span> J/g·K</span>
                         </div>
-                        <input type="range" id="cpInput" min="30" max="200" value="75" step="5" 
+                        <input type="range" id="cpInput" min="1.0" max="10.0" value="4.18" step="0.1" 
                                class="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
                                oninput="updateParams()">
                     </div>
@@ -292,7 +288,7 @@
                         </div>
                         <div>
                             <div class="flex justify-between items-center mb-1 text-xs">
-                                <label for="dh2Input" class="text-slate-700">Secondary $\Delta H_{rxn2}$</label>
+                                <label for="dh2Input" class="text-slate-700">Secondary $\Delta H_{R2}$</label>
                                 <span class="font-mono text-slate-700"><span id="dh2Value">-40.0</span> kJ/mol</span>
                             </div>
                             <input type="range" id="dh2Input" min="-100" max="50" value="-40" step="5" 
@@ -416,13 +412,8 @@
                             <span class="font-mono font-bold text-teal-700 text-sm"><span id="kpiCC">0.00</span> mol/L</span>
                         </div>
 
-                        <div class="flex justify-between items-center bg-blue-50 p-1.5 rounded-lg border border-blue-100">
-                            <span class="text-blue-800 font-semibold">System Pressure ($P$)</span>
-                            <span class="font-mono font-bold text-blue-700 text-sm"><span id="kpiP">1.00</span> atm</span>
-                        </div>
-
                         <div class="flex justify-between items-center bg-slate-50 p-1.5 rounded-lg border border-slate-100">
-                            <span class="text-slate-500 font-medium">Reactor Volume ($V$)</span>
+                            <span class="text-slate-500 font-medium">Reactor Volume ($V_R$)</span>
                             <span class="font-mono font-bold text-slate-700 text-xs">
                                 <span id="kpiV">100.0</span> L
                             </span>
@@ -472,20 +463,19 @@
 
 <script>
     const R_GAS = 8.314; // J/(mol K)
-    const R_GAS_L_ATM = 0.08206;
 
     let rxnType = '1st_order';
     let energySystem = 'incompressible';
     let thermalMode = 'jacket';
 
     let cA0 = 2.0;
-    let systemPressure = 1.0;
     let t0 = 300.0;
-    let v0 = 100.0;
+    let vR = 100.0;
+    let rhoDensity = 1000.0; // g/L
     let nOrder = 1.5;
     let eaKj = 50.0;
     let dHKj = -75.0;
-    let cpMolar = 75.0;
+    let cpMass = 4.18; // J/g·K
     let kcEquil = 2.0;
     let ea2Kj = 55.0;
     let dh2Kj = -40.0;
@@ -543,13 +533,12 @@
         thermalMode = document.getElementById('thermalModeSelect').value;
 
         cA0 = parseFloat(document.getElementById('ca0Input').value);
-        systemPressure = parseFloat(document.getElementById('pressureInput').value);
         t0 = parseFloat(document.getElementById('t0Input').value);
-        v0 = parseFloat(document.getElementById('v0Input').value);
+        vR = parseFloat(document.getElementById('v0Input').value);
         nOrder = parseFloat(document.getElementById('nOrderInput').value);
         eaKj = parseFloat(document.getElementById('eaInput').value);
         dHKj = parseFloat(document.getElementById('dhInput').value);
-        cpMolar = parseFloat(document.getElementById('cpInput').value);
+        cpMass = parseFloat(document.getElementById('cpInput').value);
         kcEquil = parseFloat(document.getElementById('kcInput').value);
         ea2Kj = parseFloat(document.getElementById('ea2Input').value);
         dh2Kj = parseFloat(document.getElementById('dh2Input').value);
@@ -558,28 +547,13 @@
         aCoeff = parseInt(document.getElementById('coeffA').value) || 1;
         bCoeff = parseInt(document.getElementById('coeffB').value) || 2;
 
-        const isConstP = (energySystem === 'ideal_gas_const_p');
-        const isIdealGas = (energySystem === 'ideal_gas_const_v' || isConstP);
-
-        document.getElementById('pressureContainer').classList.toggle('hidden', !isIdealGas);
-        document.getElementById('pressureNotice').classList.toggle('hidden', !isConstP);
-        document.getElementById('ca0Container').classList.toggle('hidden', isConstP);
-        document.getElementById('v0Label').innerText = isConstP ? "Initial Charge Moles ($n_{A0}$ factor)" : "Initial Volume ($V_0$)";
-
-        if (isConstP) {
-            cA0 = systemPressure / (R_GAS_L_ATM * t0);
-        } else if (energySystem === 'ideal_gas_const_v') {
-            systemPressure = cA0 * R_GAS_L_ATM * t0;
-        }
-
         document.getElementById('ca0Value').innerText = cA0.toFixed(3);
-        document.getElementById('pressureValue').innerText = systemPressure.toFixed(2);
         document.getElementById('t0Value').innerText = t0.toFixed(0);
-        document.getElementById('v0Value').innerText = v0.toFixed(0);
+        document.getElementById('v0Value').innerText = vR.toFixed(0);
         document.getElementById('nOrderValue').innerText = nOrder.toFixed(1);
         document.getElementById('eaValue').innerText = eaKj.toFixed(1);
         document.getElementById('dhValue').innerText = dHKj.toFixed(1);
-        document.getElementById('cpValue').innerText = cpMolar.toFixed(1);
+        document.getElementById('cpValue').innerText = cpMass.toFixed(2);
         document.getElementById('kcValue').innerText = kcEquil.toFixed(2);
         document.getElementById('ea2Value').innerText = ea2Kj.toFixed(1);
         document.getElementById('dh2Value').innerText = dh2Kj.toFixed(1);
@@ -598,14 +572,11 @@
         let html = "";
 
         if (energySystem === 'incompressible') {
-            badge.innerText = "dU/dt = Q (Incompressible)";
-            html = `$$\\frac{dn_A}{dt} = -a r_1 V, \\quad m C_v \\frac{dT}{dt} = Q + \\sum (-\\Delta H_j)(-r_j V)$$`;
-        } else if (energySystem === 'ideal_gas_const_v') {
-            badge.innerText = "dU/dt = Q (Constant Volume Gas)";
-            html = `$$\\frac{dn_A}{dt} = -a r_1 V, \\quad n_T C_v \\frac{dT}{dt} = Q + \\sum (-\\Delta U_j)(-r_j V)$$`;
+            badge.innerText = "Incompressible / Constant P";
+            html = `$$\\frac{dn_A}{dt} = R_A V_R, \\quad V_R \\rho \\hat{C}_P \\frac{dT}{dt} = -\\sum_i \\Delta H_{Ri} r_i V_R + \\dot{Q}$$`;
         } else {
-            badge.innerText = "dH/dt = Q (Constant Pressure Gas)";
-            html = `$$\\frac{dn_A}{dt} = -a r_1 V, \\quad n_T C_p \\frac{dT}{dt} = Q + \\sum (-\\Delta H_j)(-r_j V)$$`;
+            badge.innerText = "Constant Volume Ideal Gas";
+            html = `$$\\frac{dn_A}{dt} = R_A V_R, \\quad V_R \\rho \\hat{C}_V \\frac{dT}{dt} = -\\sum_i \\left(\\Delta H_{Ri} - R T \\check{\\nu}_i\\right) r_i V_R + \\dot{Q}$$`;
         }
 
         box.innerHTML = html;
@@ -617,67 +588,64 @@
         const dt = 0.1;
         const maxTime = 60.0;
 
-        let nA = cA0 * v0;
+        let nA = cA0 * vR;
         let nB = 0.0;
         let nC = 0.0;
         let T = t0;
-        let V = v0;
 
         const A01 = 1.0e5;
         const A02 = 1.0e5;
         const nA_initial = nA;
 
         for (let t = 0; t <= maxTime; t += dt) {
-            let nT = nA + nB + nC;
-            let currentP = systemPressure;
-
-            if (energySystem === 'incompressible' || energySystem === 'ideal_gas_const_v') {
-                V = v0;
-                currentP = (nT * R_GAS_L_ATM * T) / v0;
-            } else {
-                V = (nT * R_GAS_L_ATM * T) / systemPressure;
-            }
-
-            let CA = Math.max(0, nA / V);
-            let CB = Math.max(0, nB / V);
-            // Strictly bounded conversion between 0 and 1 (0% to 100%)
+            let CA = Math.max(0, nA / vR);
+            let CB = Math.max(0, nB / vR);
             let XA = Math.max(0, Math.min(1, (nA_initial - nA) / nA_initial));
 
-            simResults.push({ t, nA, nB, nC, CA, CB, T, V, P: currentP, XA });
+            simResults.push({ t, nA, nB, nC, CA, CB, T, V: vR, XA });
 
             let deriv = (currNA, currNB, currNC, currT) => {
-                let currNT = currNA + currNB + currNC;
-                let currV = (energySystem === 'ideal_gas_const_p') ? (currNT * R_GAS_L_ATM * currT) / systemPressure : v0;
-                let currCA = Math.max(0, currNA / currV);
-                let currCB = Math.max(0, currNB / currV);
+                let currCA = Math.max(0, currNA / vR);
+                let currCB = Math.max(0, currNB / vR);
 
                 let k1 = A01 * Math.exp(-(eaKj * 1000) / (R_GAS * currT));
                 let r1 = 0.0;
-                let heatGen = 0.0;
+                let heatTerm = 0.0;
 
                 if (rxnType === '1st_order') {
                     r1 = k1 * currCA;
-                    heatGen = (-dHKj * 1000) * (r1 * currV);
+                    let Ra = -aCoeff * r1;
+                    let dH1 = dHKj * 1000;
+                    let correction = (energySystem === 'ideal_gas_const_v') ? (R_GAS * currT * (bCoeff - aCoeff)) : 0.0;
+                    heatTerm = -(dH1 - correction) * r1 * vR;
                 } else if (rxnType === '1st_reversible') {
                     let k_rev = k1 / kcEquil;
                     r1 = k1 * currCA - k_rev * currCB;
-                    heatGen = (-dHKj * 1000) * (r1 * currV);
+                    let dH1 = dHKj * 1000;
+                    let correction = (energySystem === 'ideal_gas_const_v') ? (R_GAS * currT * (bCoeff - aCoeff)) : 0.0;
+                    heatTerm = -(dH1 - correction) * r1 * vR;
                 } else if (rxnType === '2nd_order') {
                     r1 = k1 * currCA * currCA;
-                    heatGen = (-dHKj * 1000) * (r1 * currV);
+                    let dH1 = dHKj * 1000;
+                    let correction = (energySystem === 'ideal_gas_const_v') ? (R_GAS * currT * (bCoeff - aCoeff)) : 0.0;
+                    heatTerm = -(dH1 - correction) * r1 * vR;
                 } else if (rxnType === 'nth_order') {
                     r1 = k1 * Math.pow(currCA, nOrder);
-                    heatGen = (-dHKj * 1000) * (r1 * currV);
+                    let dH1 = dHKj * 1000;
+                    let correction = (energySystem === 'ideal_gas_const_v') ? (R_GAS * currT * (bCoeff - aCoeff)) : 0.0;
+                    heatTerm = -(dH1 - correction) * r1 * vR;
                 } else if (rxnType === 'series') {
                     let k2 = A02 * Math.exp(-(ea2Kj * 1000) / (R_GAS * currT));
-                    r1 = k1 * currCA;
                     let r2 = k2 * currCB;
-                    heatGen = (-dHKj * 1000) * (r1 * currV) + (-dh2Kj * 1000) * (r2 * currV);
+                    let dH1 = dHKj * 1000;
+                    let dH2 = dh2Kj * 1000;
+                    heatTerm = -dH1 * r1 * vR - dH2 * r2 * vR;
                 } else if (rxnType === 'parallel') {
                     let k2 = A02 * Math.exp(-(ea2Kj * 1000) / (R_GAS * currT));
-                    r1 = k1 * currCA;
                     let r1_b = k2 * currCA;
-                    heatGen = (-dHKj * 1000) * (r1 * currV) + (-dh2Kj * 1000) * (r1_b * currV);
+                    let dH1 = dHKj * 1000;
+                    let dH2 = dh2Kj * 1000;
+                    heatTerm = -dH1 * r1 * vR - dH2 * r1_b * vR;
                 }
 
                 let dna_dt = 0, dnb_dt = 0, dnc_dt = 0;
@@ -685,24 +653,26 @@
                 if (rxnType === 'series') {
                     let k2 = A02 * Math.exp(-(ea2Kj * 1000) / (R_GAS * currT));
                     let r2 = k2 * currCB;
-                    dna_dt = -aCoeff * r1 * currV;
-                    dnb_dt = (bCoeff * r1 - r2) * currV;
-                    dnc_dt = (3 * r2) * currV;
+                    dna_dt = (-aCoeff * r1) * vR;
+                    dnb_dt = (bCoeff * r1 - r2) * vR;
+                    dnc_dt = (3 * r2) * vR;
                 } else if (rxnType === 'parallel') {
                     let k2 = A02 * Math.exp(-(ea2Kj * 1000) / (R_GAS * currT));
                     let r1_b = k2 * currCA;
-                    dna_dt = -aCoeff * (r1 + r1_b) * currV;
-                    dnb_dt = bCoeff * r1 * currV;
-                    dnc_dt = 3 * r1_b * currV;
+                    dna_dt = -aCoeff * (r1 + r1_b) * vR;
+                    dnb_dt = (bCoeff * r1) * vR;
+                    dnc_dt = (3 * r1_b) * vR;
                 } else {
-                    dna_dt = -aCoeff * r1 * currV;
-                    dnb_dt = bCoeff * r1 * currV;
+                    dna_dt = (-aCoeff * r1) * vR;
+                    dnb_dt = (bCoeff * r1) * vR;
                     dnc_dt = 0;
                 }
 
-                let Q_jacket = (thermalMode === 'jacket') ? (uaVal * (tJacket - currT) * 60.0) : 0.0;
-                let heatCapTotal = currNT * cpMolar;
-                let dT_dt = (Q_jacket + heatGen) / heatCapTotal;
+                let Q_dot = (thermalMode === 'jacket') ? (uaVal * (tJacket - currT) * 60.0) : 0.0;
+                let massTotal = vR * rhoDensity; // g
+                let heatCap = (energySystem === 'incompressible') ? cpMass : (cpMass * 0.8); // J/g·K
+                
+                let dT_dt = (heatTerm + Q_dot) / (massTotal * heatCap);
                 if (thermalMode === 'isothermal') dT_dt = 0;
 
                 return { dna_dt, dnb_dt, dnc_dt, dT_dt };
@@ -739,7 +709,6 @@
         document.getElementById('kpiXA').innerText = (closest.XA * 100.0).toFixed(1);
         document.getElementById('kpiCA').innerText = closest.CA.toFixed(3);
         document.getElementById('kpiCC').innerText = (closest.nC / closest.V).toFixed(3);
-        document.getElementById('kpiP').innerText = closest.P.toFixed(2);
         document.getElementById('kpiV').innerText = closest.V.toFixed(1);
     }
 
@@ -785,7 +754,6 @@
         const labels = simResults.map(r => r.t.toFixed(1));
         let datasets = [];
 
-        // Configure y-axis limits depending on mode
         if (plotMode === 'conv') {
             batchChart.options.scales.y.min = 0;
             batchChart.options.scales.y.max = 100;
@@ -860,7 +828,6 @@
         document.getElementById('rxnTypeSelect').value = "1st_order";
         document.getElementById('energyBalanceSelect').value = "incompressible";
         document.getElementById('thermalModeSelect').value = "jacket";
-        document.getElementById('pressureInput').value = "1.0";
         document.getElementById('coeffA').value = "1";
         document.getElementById('coeffB').value = "2";
         onReactionTypeChange();
