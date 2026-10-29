@@ -170,20 +170,10 @@
                     </div>
                 </div>
 
-                <!-- Initial Charge & Pressure Conditions -->
+                <!-- Initial Charge & Operating Conditions -->
                 <div class="p-3 bg-amber-50/60 border border-amber-200 rounded-lg space-y-3">
                     <div class="font-bold text-amber-900 text-xs uppercase tracking-wide flex justify-between items-center">
-                        <span><i class="fa-solid fa-flask text-amber-600 mr-1"></i> Initial Charge & Pressure</span>
-                    </div>
-
-                    <div id="pressureContainer" class="hidden">
-                        <div class="flex justify-between items-center mb-1 text-xs">
-                            <label for="pressureInput" class="text-amber-900 font-bold">System / Operating Pressure ($P$)</label>
-                            <span class="font-mono text-amber-900 font-bold"><span id="pressureValue">1.00</span> atm</span>
-                        </div>
-                        <input type="range" id="pressureInput" min="0.2" max="5.0" value="1.0" step="0.1" 
-                               class="w-full h-1.5 bg-amber-200 rounded-lg appearance-none cursor-pointer accent-amber-600"
-                               oninput="updateParams()">
+                        <span><i class="fa-solid fa-flask text-amber-600 mr-1"></i> Initial Charge & Conditions</span>
                     </div>
 
                     <div id="ca0Container">
@@ -233,14 +223,20 @@
                                oninput="updateParams()">
                     </div>
 
-                    <div>
-                        <div class="flex justify-between items-center mb-1 text-xs">
-                            <label for="eaInput" class="text-slate-600">Primary Activation Energy ($E_{a1}$)</label>
-                            <span class="font-mono text-slate-700"><span id="eaValue">50.0</span> kJ/mol</span>
+                    <!-- Primary Frequency Factor & Activation Energy -->
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label for="a01Input" class="block text-[11px] text-slate-600 mb-0.5">Primary $A_1$ (s⁻¹ or L/mol·s):</label>
+                            <input type="number" id="a01Input" value="100000" step="1000" min="100" max="10000000"
+                                   class="w-full bg-white border border-slate-300 font-mono text-xs rounded p-1 text-center focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                                   onchange="updateParams()">
                         </div>
-                        <input type="range" id="eaInput" min="10" max="100" value="50" step="1" 
-                               class="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
-                               oninput="updateParams()">
+                        <div>
+                            <label for="eaInput" class="block text-[11px] text-slate-600 mb-0.5">Primary $E_{a1}$ (kJ/mol):</label>
+                            <input type="number" id="eaInput" value="50" step="1" min="10" max="100"
+                                   class="w-full bg-white border border-slate-300 font-mono text-xs rounded p-1 text-center focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                                   onchange="updateParams()">
+                        </div>
                     </div>
 
                     <div>
@@ -273,18 +269,24 @@
                                oninput="updateParams()">
                     </div>
 
+                    <!-- Secondary Reaction Box (Series / Parallel) -->
                     <div id="secondaryRxnContainer" class="hidden p-2.5 bg-amber-100/50 rounded-lg border border-amber-200 space-y-2 mt-2">
                         <div class="font-bold text-amber-900 text-xs flex justify-between">
                             <span id="secondaryRxnLabel">Secondary Reaction</span>
                         </div>
-                        <div>
-                            <div class="flex justify-between items-center mb-1 text-xs">
-                                <label for="ea2Input" class="text-slate-700">Secondary $E_{a2}$</label>
-                                <span class="font-mono text-slate-700"><span id="ea2Value">55.0</span> kJ/mol</span>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label for="a02Input" class="block text-[11px] text-amber-900 mb-0.5">Secondary $A_2$:</label>
+                                <input type="number" id="a02Input" value="100000" step="1000" min="100" max="10000000"
+                                       class="w-full bg-white border border-amber-300 font-mono text-xs rounded p-1 text-center focus:ring-1 focus:ring-amber-500 focus:outline-none"
+                                       onchange="updateParams()">
                             </div>
-                            <input type="range" id="ea2Input" min="10" max="100" value="55" step="1" 
-                                   class="w-full h-1.5 bg-amber-200 rounded-lg appearance-none cursor-pointer accent-amber-600"
-                                   oninput="updateParams()">
+                            <div>
+                                <label for="ea2Input" class="block text-[11px] text-amber-900 mb-0.5">Secondary $E_{a2}$:</label>
+                                <input type="number" id="ea2Input" value="55" step="1" min="10" max="100"
+                                       class="w-full bg-white border border-amber-300 font-mono text-xs rounded p-1 text-center focus:ring-1 focus:ring-amber-500 focus:outline-none"
+                                       onchange="updateParams()">
+                            </div>
                         </div>
                         <div>
                             <div class="flex justify-between items-center mb-1 text-xs">
@@ -294,6 +296,25 @@
                             <input type="range" id="dh2Input" min="-100" max="50" value="-40" step="5" 
                                    class="w-full h-1.5 bg-amber-200 rounded-lg appearance-none cursor-pointer accent-amber-600"
                                    oninput="updateParams()">
+                        </div>
+                    </div>
+
+                    <!-- Live Rate Constants Readout at Probe Temperature -->
+                    <div class="p-2.5 bg-white rounded-lg border border-blue-200 shadow-inner space-y-1 text-xs font-mono">
+                        <div class="text-blue-900 font-bold mb-1 flex items-center justify-between">
+                            <span><i class="fa-solid fa-chart-pie text-blue-600 mr-1"></i> Rate Constants at Selected Probe $T$:</span>
+                        </div>
+                        <div class="flex justify-between text-slate-700">
+                            <span>Primary $k_1(T)$:</span>
+                            <span id="k1ProbeDisplay" class="font-bold text-blue-800">0.000 s⁻¹</span>
+                        </div>
+                        <div id="k2ProbeRow" class="hidden flex justify-between text-slate-700">
+                            <span>Secondary $k_2(T)$:</span>
+                            <span id="k2ProbeDisplay" class="font-bold text-amber-800">0.000 s⁻¹</span>
+                        </div>
+                        <div id="kRevProbeRow" class="hidden flex justify-between text-slate-700">
+                            <span>Reverse $k_{\text{rev}}(T)$:</span>
+                            <span id="kRevProbeDisplay" class="font-bold text-purple-800">0.000 s⁻¹</span>
                         </div>
                     </div>
 
@@ -473,10 +494,12 @@
     let vR = 100.0;
     let rhoDensity = 1000.0; // g/L
     let nOrder = 1.5;
+    let A01 = 100000.0;
     let eaKj = 50.0;
     let dHKj = -75.0;
     let cpMass = 4.18; // J/g·K
     let kcEquil = 2.0;
+    let A02 = 100000.0;
     let ea2Kj = 55.0;
     let dh2Kj = -40.0;
     let tJacket = 320.0;
@@ -517,6 +540,10 @@
         document.getElementById('kpiNcContainer').classList.toggle('hidden', rxnType !== 'series' && rxnType !== 'parallel');
         document.getElementById('btnViewSelect').classList.toggle('hidden', rxnType !== 'series' && rxnType !== 'parallel');
 
+        // Control row visibility for live rate constants
+        document.getElementById('k2ProbeRow').classList.toggle('hidden', rxnType !== 'series' && rxnType !== 'parallel');
+        document.getElementById('kRevProbeRow').classList.toggle('hidden', rxnType !== '1st_reversible');
+
         const headerTitle = document.getElementById('headerRxnTitle');
         if (rxnType === '1st_order') headerTitle.innerHTML = "Reaction: <strong>Irreversible ($aA \\rightarrow bB$)</strong>";
         if (rxnType === '1st_reversible') headerTitle.innerHTML = "Reaction: <strong>Reversible ($aA \\rightleftharpoons bB$)</strong>";
@@ -536,10 +563,12 @@
         t0 = parseFloat(document.getElementById('t0Input').value);
         vR = parseFloat(document.getElementById('v0Input').value);
         nOrder = parseFloat(document.getElementById('nOrderInput').value);
+        A01 = parseFloat(document.getElementById('a01Input').value) || 100000;
         eaKj = parseFloat(document.getElementById('eaInput').value);
         dHKj = parseFloat(document.getElementById('dhInput').value);
         cpMass = parseFloat(document.getElementById('cpInput').value);
         kcEquil = parseFloat(document.getElementById('kcInput').value);
+        A02 = parseFloat(document.getElementById('a02Input').value) || 100000;
         ea2Kj = parseFloat(document.getElementById('ea2Input').value);
         dh2Kj = parseFloat(document.getElementById('dh2Input').value);
         tJacket = parseFloat(document.getElementById('tjInput').value);
@@ -551,11 +580,9 @@
         document.getElementById('t0Value').innerText = t0.toFixed(0);
         document.getElementById('v0Value').innerText = vR.toFixed(0);
         document.getElementById('nOrderValue').innerText = nOrder.toFixed(1);
-        document.getElementById('eaValue').innerText = eaKj.toFixed(1);
         document.getElementById('dhValue').innerText = dHKj.toFixed(1);
         document.getElementById('cpValue').innerText = cpMass.toFixed(2);
         document.getElementById('kcValue').innerText = kcEquil.toFixed(2);
-        document.getElementById('ea2Value').innerText = ea2Kj.toFixed(1);
         document.getElementById('dh2Value').innerText = dh2Kj.toFixed(1);
         document.getElementById('tjValue').innerText = tJacket.toFixed(0);
         document.getElementById('uaValue').innerText = uaVal.toFixed(0);
@@ -593,8 +620,6 @@
         let nC = 0.0;
         let T = t0;
 
-        const A01 = 1.0e5;
-        const A02 = 1.0e5;
         const nA_initial = nA;
 
         for (let t = 0; t <= maxTime; t += dt) {
@@ -614,7 +639,6 @@
 
                 if (rxnType === '1st_order') {
                     r1 = k1 * currCA;
-                    let Ra = -aCoeff * r1;
                     let dH1 = dHKj * 1000;
                     let correction = (energySystem === 'ideal_gas_const_v') ? (R_GAS * currT * (bCoeff - aCoeff)) : 0.0;
                     heatTerm = -(dH1 - correction) * r1 * vR;
@@ -710,6 +734,19 @@
         document.getElementById('kpiCA').innerText = closest.CA.toFixed(3);
         document.getElementById('kpiCC').innerText = (closest.nC / closest.V).toFixed(3);
         document.getElementById('kpiV').innerText = closest.V.toFixed(1);
+
+        // Evaluate live rate constants at probe temperature T
+        let T_probe = closest.T;
+        let k1_val = A01 * Math.exp(-(eaKj * 1000) / (R_GAS * T_probe));
+        document.getElementById('k1ProbeDisplay').innerText = k1_val < 0.01 ? k1_val.toExponential(3) : k1_val.toFixed(4);
+
+        if (rxnType === 'series' || rxnType === 'parallel') {
+            let k2_val = A02 * Math.exp(-(ea2Kj * 1000) / (R_GAS * T_probe));
+            document.getElementById('k2ProbeDisplay').innerText = k2_val < 0.01 ? k2_val.toExponential(3) : k2_val.toFixed(4);
+        } else if (rxnType === '1st_reversible') {
+            let k_rev_val = k1_val / kcEquil;
+            document.getElementById('kRevProbeDisplay').innerText = k_rev_val < 0.01 ? k_rev_val.toExponential(3) : k_rev_val.toFixed(4);
+        }
     }
 
     function setPlotMode(mode) {
@@ -830,6 +867,8 @@
         document.getElementById('thermalModeSelect').value = "jacket";
         document.getElementById('coeffA').value = "1";
         document.getElementById('coeffB').value = "2";
+        document.getElementById('a01Input').value = "100000";
+        document.getElementById('eaInput').value = "50";
         onReactionTypeChange();
     }
 
